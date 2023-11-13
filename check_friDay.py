@@ -23,7 +23,7 @@ def check_line(line):
   return True
 
 #
-url = 'https://ailog.shopping.friday.tw/getget1'
+url = 'https://ailog.shopping.friday.tw/getget'
 
 try_cnt = 3
 final_result = False
