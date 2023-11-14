@@ -1,0 +1,14 @@
+Project:
+  id: 'alert_sms'
+  stg: 'local' #prd:正式區  dev:測試區  local:個人本地端
+  idx: 'alert_sms_logs'
+Check:
+  getget_url: 'https://aaa.bbb.com/check'
+  getget_lines: 2
+  try_cnt: 3
+  try_sleep: 60 # sec
+SMS:
+  sms_url: 'https://sms.com'
+  sms_username: 'xxxxxxxx'
+  sms_password: 'xxxxxxxx'
+  sms_defaultdst: '0930000000'

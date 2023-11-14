@@ -1,3 +1,31 @@
+config.yml
+.obsidian
+ignored/
+webclient/*
+*.pyc
+*.tar.gz
+.DS_Store
+.idea/
+logs/
+model/
+.vscode/
+.venv/
+*.h5
+*.npy
+*.swo
+*.ini
+*.bak
+*ipynb_checkpoints*
+*Untitled*
+*untitled*
+*test*
+__pycache__/
+__pycache__
+__pydummy__
+__pypackages__/
+
+
+
 # These are some examples of commonly ignored file patterns.
 # You should customize this list as applicable to your project.
 # Learn more about .gitignore:
