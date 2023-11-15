@@ -77,8 +77,8 @@ while (final_result is False) and (i_cnt < try_cnt):
 if not final_result:
   #print(msg)
   lt_text = msg.splitlines()[:2]
-  for i in len(lt_text):
+  for i in range(len(lt_text)):
     if not re.fullmatch(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} OK', lt_text[i]):
-      print(str(i) + ' ' + line)
+      print(str(i) + ' ' + lt_text[i])
   
 
