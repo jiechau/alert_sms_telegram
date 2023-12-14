@@ -3,12 +3,10 @@ Project:
   stg: 'local' #prd:正式區  dev:測試區  local:個人本地端
   idx: 'alert_sms_logs'
 Check:
-  getget_url: 'https://aaa.bbb.com/check'
-  getget_lines: 2
+  getget_url: 'https://abc.com/api'
+  getget_lines: 2 # from vm:0, from cloud:1
   try_cnt: 3
-  try_sleep: 60 # sec
+  try_sleep: 1 # sec
 SMS:
-  sms_url: 'https://sms.com'
-  sms_username: 'xxxxxxxx'
-  sms_password: 'xxxxxxxx'
-  sms_defaultdst: '0930000000'
+  sms_cmd: 'curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ '
+
