@@ -1,12 +1,13 @@
 Project:
-  id: 'alert_sms'
+  id: 'alert_sms_telegram'
   stg: 'local' #prd:正式區  dev:測試區  local:個人本地端
-  idx: 'alert_sms_logs'
+  idx: 'alert_sms_telegram_logs'
 Check:
-  getget_url: 'https://abc.com/api'
+  getget_url: 'https://aaa.bbb.com/api'
   getget_lines: 2 # from vm:0, from cloud:1
   try_cnt: 3
-  try_sleep: 1 # sec
+  try_sleep: 30 # sec
 SMS:
   sms_cmd: 'curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ '
+  # sms_cmd: 'curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text="alert!text!"'
 

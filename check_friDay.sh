@@ -2,7 +2,7 @@
 
 #cd $HOME/venv
 #source py311/bin/activate
-#cd $HOME/life_codes/alert_sms
+#cd $HOME/life_codes/alert_sms_telegram
 #while true; do
 #  python check_friDay.py
 #  sleep 60
@@ -11,7 +11,7 @@
 
 cd $HOME/venv
 source py311/bin/activate
-cd $HOME/life_codes/alert_sms
+cd $HOME/life_codes/alert_sms_telegram
 python check_friDay.py >> logs/sms.txt 2>&1
 #deactivate
 current_time=$(date +"3 %Y-%m-%d %H:%M:%S")
