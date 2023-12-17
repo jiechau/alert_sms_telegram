@@ -1,79 +1,69 @@
 
-## config.yml
-copy config.yml.example to config.yml
+## Configuration File (config.yml):
+Begin by copying config.yml.example to config.yml
 
-## Check:
+# In the check section, set the following parameters:
 
 Check:
   getget_url: 'https://aaa.bbb.com/api'
-  getget_lines: 2 # from vm:0, from cloud:1
+  getget_lines: 2 # Use 0 for VM, 1 for cloud
   try_cnt: 3
-  try_sleep: 30 # sec
+  try_sleep: 30 # 30 seconds
 
-if getget_lines == 2
-getget_url should return this format (in text/html):
+Ensure that getget_lines is set to 2. The getget_url should return the following format (in text/html):
 
-ok ones:
+Successful responses:
 2023-12-15 23:15:43 OK
 2023-12-15 23:15:55 OK
 
-not ok ones (if it is not ok, it followed by some error numbers):
+Unsuccessful responses (accompanied by error codes):
 2023-12-15 23:15:43 OK 12 8
 2023-12-15 23:15:55 OK
 
 
-## cron
-run cron in crontab.txt:
-*/5 * * * * $HOME/life_codes/alert_sms_telegram/check_friDay.sh >> /tmp/jie_aa.txt 2>&1 
-
-
-## SMS:
-eventually i found a better way than sms, it's telegram. and it's free.
+# In the SMS section, set the following parameters:
 
 SMS:
   sms_cmd: 'curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ '
 
-check inside check_friDay.py, the actual shell command is:
+Instead of SMS, we've transitioned to using Telegram for its cost-effectiveness. Inside check_friDay.py, the shell command is as follows:
 $ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text="alert!text!"
 
-i leverage telegram. this is how to get XXX,YYY,ZZZ in telegram
 
-(0) install telegram
+## Cron Job:
+example of cron command is in crontab.txt:
+*/5 * * * * $HOME/life_codes/alert_sms_telegram/check_friDay.sh >> /tmp/jie_aa.txt 2>&1 
 
-(1) add BotFather https://telegram.me/BotFather
-    use this command in BotFather to create a Bot, suppose the Bot's name is @aaaBot
-    /newbot 
-    (suppose the Bot's name is @aaaBot)
 
-    after this step, you will be notified by the secret token. 
-    then you get the token in format like: 68998798798:AAh2cFwDKdh2c2CJAh2c
-    this is XXX:YYY
 
-(2) use BotFather /mybots
-    select @aaaBot
-    > Bot Settings
-    > Channel Admin Rights 
-    > Post in the channel [check]
+## Setting up Telegram
 
-(3) then you create a New Channel - Private or Public is all ok
-	suppose this channel's name: my_alert_channel 
-    suppose this channel's invite code is: https://t.me/+abcdefghijklmn (the private channel format)
+(1) Install Telegram.
 
-(4) config your 'my_alert_channel' channel, 
-    add @aaaBot as admin
+(2) Add BotFather (https://telegram.me/BotFather). Use the /newbot command to create a bot (e.g., @aaaBot). After this, you'll receive a secret token in the format 68998798798:AAh2cFwDKdh2c2CJAh2c (This is your XXX:YYY).
 
-(5) send a message to 'my_alert_channel'
-    type anything, for example 'kkk' (this would be easy to grep)
+(3) Access BotFather again using /mybots, select your bot (@aaaBot), and adjust the settings:
 
-(6) find chat_id
-    you need a linux terminal. shell with curl:
+	Go to 'Bot Settings'
+	Select 'Channel Admin Rights'
+	Enable 'Post in the channel' (make it checked)
+
+(4) Create a new channel (private or public), for instance 'my_alert_channel' with an invite code like https://t.me/+abcdefghijklmn
+
+(5) Configure my_alert_channel by adding @aaaBot as an admin.
+
+(6) Send a message to my_alert_channel, something simple like 'kkk'.
+
+(7) Find the chat_id using a Linux terminal:
+
 	$ curl https://api.telegram.org/botXXX:YYY/getUpdates
 	or 
 	$ curl https://api.telegram.org/botXXX:YYY/getUpdates | grep 'kkk'
-	then you find the chat_id, in this format: '452452341' or '-61341341'
-	suppose it's ZZZ
+	
+	The chat_id will appear in a format such as '452452341' or '-61341341' (This is your ZZZ).
 
-(7) now you get all XXX, YYY, ZZZ, you could send the message to the channel 'my_alert_channel':
+(8) Now, with XXX, YYY, ZZZ obtained, you can send messages to 'my_alert_channel' using:
+
 	$ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text="alert!text!"
 
 
