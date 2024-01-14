@@ -38,15 +38,22 @@ example of cron command is in crontab.txt:
 
 ## Setting up Telegram
 
+
+one bot
+
 (1) Install Telegram.
 
-(2) Add BotFather (https://telegram.me/BotFather). Use the /newbot command to create a bot (e.g., @aaaBot). After this, you'll receive a secret token in the format 68998798798:AAh2cFwDKdh2c2CJAh2c (This is your XXX:YYY).
+(2) Add BotFather (https://telegram.me/BotFather). Use the /newbot command to create a bot (e.g., @aaaBot). 
+    After this, you'll receive a secret token in the format 68998798798:AAh2cFwDKdh2c2CJAh2c (This is your XXX:YYY).
 
 (3) Access BotFather again using /mybots, select your bot (@aaaBot), and adjust the settings:
 
 	Go to 'Bot Settings'
 	Select 'Channel Admin Rights'
 	Enable 'Post in the channel' (make it checked)
+
+
+may channels
 
 (4) Create a new channel (private or public), for instance 'my_alert_channel' with an invite code like https://t.me/+abcdefghijklmn
 
@@ -64,7 +71,7 @@ example of cron command is in crontab.txt:
 
 (8) Now, with XXX, YYY, ZZZ obtained, you can send messages to 'my_alert_channel' using:
 
-	$ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text="alert!text!"
+	$ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text='alert!text!' # don't use double quote
 
 
 
