@@ -1,4 +1,3 @@
-
 ## Configuration File (config.yml):
 Begin by copying config.yml.example to config.yml
 
@@ -53,7 +52,7 @@ one bot
 	Enable 'Post in the channel' (make it checked)
 
 
-may channels
+many channels
 
 (4) Create a new channel (private or public), for instance 'my_alert_channel' with an invite code like https://t.me/+abcdefghijklmn
 
