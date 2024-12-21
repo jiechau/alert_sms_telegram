@@ -103,4 +103,11 @@ $ source py37t/bin/activate
 $ $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
 $ python telegram_bot_example.py
 
+# misc memo
+
+#in /home/pi/MiTemperature2/sendToInflux_eyepi.sh
+#you should have:
+mkdir -p /tmp/sensor
+echo $3 > /tmp/sensor/$2
+
 
