@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 import yaml
 def get_myconfig(_myconfig_file):
     with open(_myconfig_file, 'r', encoding="utf-8") as stream:
-        _myconfig = yaml.load(stream, Loader=yaml.CLoader)
+        #_myconfig = yaml.load(stream, Loader=yaml.CLoader)
+        _myconfig = yaml.safe_load(stream)  # Replace yaml.load(stream, Loader=yaml.CLoader)
     return _myconfig
 myconfig = get_myconfig("config.yml")
 TOKEN = myconfig['Telegram']['token']
