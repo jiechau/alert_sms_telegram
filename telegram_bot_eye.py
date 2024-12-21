@@ -143,9 +143,9 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
 
     elif query.data == 'set_livingroom':
         keyboard = [
-            [InlineKeyboardButton("🎉 ❄️ 客廳 冷氣", callback_data='set_livingroom1'),
-             InlineKeyboardButton("🎉 ♨️ 客廳 暖氣", callback_data='set_livingroom2'),
-             InlineKeyboardButton("🎉 📴 客廳 關機", callback_data='set_livingroom3')],
+            [InlineKeyboardButton("🎉 ❄️ 客廳 冷氣", callback_data='set_livingroom1')],
+            [InlineKeyboardButton("🎉 ♨️ 客廳 暖氣", callback_data='set_livingroom2')],
+            [InlineKeyboardButton("🎉 📴 客廳 關機", callback_data='set_livingroom3')],
             [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
         ]
         await query.edit_message_text(
@@ -155,9 +155,9 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
 
     elif query.data == 'set_bedroom':
         keyboard = [
-            [InlineKeyboardButton("😴 ❄️ 臥室 冷氣", callback_data='set_bedroom1'),
-             InlineKeyboardButton("😴 ♨️ 臥室 暖氣", callback_data='set_bedroom2'),
-             InlineKeyboardButton("😴 📴 臥室 關機", callback_data='set_bedroom3')],
+            [InlineKeyboardButton("😴 ❄️ 臥室 冷氣", callback_data='set_bedroom1')],
+            [InlineKeyboardButton("😴 ♨️ 臥室 暖氣", callback_data='set_bedroom2')],
+            [InlineKeyboardButton("😴 📴 臥室 關機", callback_data='set_bedroom3')],
             [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
         ]
         await query.edit_message_text(
