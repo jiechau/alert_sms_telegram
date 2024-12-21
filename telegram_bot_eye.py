@@ -24,6 +24,52 @@ TARGET_CHAT_ID = myconfig['Telegram']['chat_id']
 # Configuration
 user_states: Dict[int, Dict[str, Any]] = {}
 
+# make temperature string
+import os
+from datetime import datetime
+def gather_sensor_data():
+    result = ""
+    sensor_dir = "/tmp/sensor"
+    
+    # Check if directory exists
+    if not os.path.exists(sensor_dir):
+        return "Error: Directory /tmp/sensor does not exist"
+    
+    try:
+        # Get all files in the directory
+        for filename in os.listdir(sensor_dir):
+            full_path = os.path.join(sensor_dir, filename)
+            
+            # Get last modified time
+            mod_time = os.path.getmtime(full_path)
+            #mod_datetime = datetime.fromtimestamp(mod_time).strftime('%Y-%m-%d %H:%M:%S')
+            mod_datetime = datetime.fromtimestamp(mod_time).strftime('%H:%M')
+            
+            # Read file content
+            try:
+                with open(full_path, 'r') as f:
+                    content = f.read().strip()  # strip() removes any trailing newlines
+                
+                # Add this file's info to result string
+                result += f"{mod_datetime}, {filename}, {content}\n"
+                
+            except Exception as e:
+                result += f"{mod_datetime}, {filename}, Error reading file: {str(e)}\n"
+                
+    except Exception as e:
+        return f"Error accessing directory: {str(e)}"
+    
+    return result
+
+
+
+
+
+
+
+
+
+
 async def check_chat_id(update: Update) -> bool:
     """Verify if the update is from the target chat."""
     if not update.effective_chat:
@@ -45,9 +91,9 @@ async def start(update: Update, context: CallbackContext) -> None:
 
     keyboard = [
         [InlineKeyboardButton("📊 Status", callback_data='status'),
-         InlineKeyboardButton("⚙️ Settings", callback_data='settings')],
-        [InlineKeyboardButton("📈 Analytics", callback_data='analytics'),
-         InlineKeyboardButton("❓ Help", callback_data='help')]
+         InlineKeyboardButton("⚙️ Settings", callback_data='settings')]
+        #[InlineKeyboardButton("📈 Analytics", callback_data='analytics'),
+        # InlineKeyboardButton("❓ Help", callback_data='help')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -68,32 +114,62 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
         await query.answer("Unauthorized chat", show_alert=True)
         return
     
-    await query.answer()
-    
-    if query.data == 'status':
-        status_text = "🖥️ Channel Status:\n" + \
-                     "Members: 1,234\n" + \
-                     "Messages today: 56\n" + \
-                     "Active threads: 3"
-        await query.edit_message_text(text=status_text, reply_markup=get_back_keyboard())
-        
-    elif query.data == 'settings':
-        keyboard = [
-            [InlineKeyboardButton("🔔 Notifications", callback_data='notifications'),
-             InlineKeyboardButton("⏰ Schedule", callback_data='schedule')],
-            [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
-        ]
-        await query.edit_message_text(
-            "⚙️ Channel Settings:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-        
-    elif query.data == 'main_menu':
+
+    if query.data == 'main_menu':
         keyboard = get_main_menu_keyboard()
         await query.edit_message_text(
             "Main Menu - Select an option:",
             reply_markup=keyboard
         )
+   
+    elif query.data == 'status':
+        temperature_data = gather_sensor_data()
+        status_text = "📊 eye Temperature:\n" + temperature_data
+        await query.edit_message_text(text=status_text, reply_markup=get_back_keyboard())
+        
+    elif query.data == 'settings':
+        keyboard = [
+            [InlineKeyboardButton("🎉 客廳", callback_data='set_livingroom'),
+             InlineKeyboardButton("😴 臥室", callback_data='set_bedroom')],
+            [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
+        ]
+        await query.edit_message_text(
+            "⚙️ set aircon:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    elif query.data == 'set_livingroom':
+        keyboard = [
+            [InlineKeyboardButton("🎉 客廳1", callback_data='set_livingroom1'),
+             InlineKeyboardButton("🎉 客廳2", callback_data='set_livingroom2'),
+             InlineKeyboardButton("🎉 客廳3", callback_data='set_livingroom3')],
+            [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
+        ]
+        await query.edit_message_text(
+            "⚙️ set_livingroom aircon:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    elif query.data == 'set_bedroom':
+        keyboard = [
+            [InlineKeyboardButton("😴 臥室1", callback_data='set_bedroom1'),
+             InlineKeyboardButton("😴 臥室2", callback_data='set_bedroom2'),
+             InlineKeyboardButton("😴 臥室3", callback_data='set_bedroom3')],
+            [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
+        ]
+        await query.edit_message_text(
+            "⚙️ set_bedroom aircon:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+
+
+
+
+
+
+    await query.answer()
+
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     """Handle incoming messages and channel posts."""
@@ -150,9 +226,9 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     """Create the main menu keyboard."""
     keyboard = [
         [InlineKeyboardButton("📊 Status", callback_data='status'),
-         InlineKeyboardButton("⚙️ Settings", callback_data='settings')],
-        [InlineKeyboardButton("📈 Analytics", callback_data='analytics'),
-         InlineKeyboardButton("❓ Help", callback_data='help')]
+         InlineKeyboardButton("⚙️ Settings", callback_data='settings')]
+        #[InlineKeyboardButton("📈 Analytics", callback_data='analytics'),
+        # InlineKeyboardButton("❓ Help", callback_data='help')]
     ]
     return InlineKeyboardMarkup(keyboard)
 

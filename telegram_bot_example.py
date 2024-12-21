@@ -71,7 +71,7 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
     
     if query.data == 'status':
         status_text = "🖥️ Channel Status:\n" + \
-                     "Members: 1,234\n" + \
+                     "Members: 1,235\n" + \
                      "Messages today: 56\n" + \
                      "Active threads: 3"
         await query.edit_message_text(text=status_text, reply_markup=get_back_keyboard())
