@@ -1,0 +1,3 @@
+Telegram:
+  token: 'alert_sms_telegram'
+  chat_id: 'local' 

@@ -1,42 +1,5 @@
-## Configuration File (config.yml):
-Begin by copying config.yml.example to config.yml
 
-# In the check section, set the following parameters:
-
-Check:
-  getget_url: 'https://aaa.bbb.com/api'
-  getget_lines: 2 # Use 0 for VM, 1 for cloud
-  try_cnt: 3
-  try_sleep: 30 # 30 seconds
-
-Ensure that getget_lines is set to 2. The getget_url should return the following format (in text/html):
-
-Successful responses:
-2023-12-15 23:15:43 OK
-2023-12-15 23:15:55 OK
-
-Unsuccessful responses (accompanied by error codes):
-2023-12-15 23:15:43 OK 12 8
-2023-12-15 23:15:55 OK
-
-
-# In the SMS section, set the following parameters:
-
-SMS:
-  sms_cmd: 'curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ '
-
-Instead of SMS, we've transitioned to using Telegram for its cost-effectiveness. Inside check_friDay.py, the shell command is as follows:
-$ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text="alert!text!"
-
-
-## Cron Job:
-example of cron command is in crontab.txt:
-*/5 * * * * $HOME/life_codes/alert_sms_telegram/check_friDay.sh >> /tmp/jie_aa.txt 2>&1 
-
-
-
-## Setting up Telegram
-
+## 1. Setting up Telegram
 
 one bot
 
@@ -50,7 +13,6 @@ one bot
 	Go to 'Bot Settings'
 	Select 'Channel Admin Rights'
 	Enable 'Post in the channel' (make it checked)
-
 
 many channels
 
@@ -68,6 +30,11 @@ many channels
 	
 	The chat_id will appear in a format such as '452452341' or '-61341341' (This is your ZZZ).
 
+	another way:
+	Forward a message from your channel to @userinfobot
+	you can get your chat_id
+	但是這裏要小心，很多假的，要找那個每月使用量很大的那個就是了
+
 (8) Now, with XXX, YYY, ZZZ obtained, you can send messages to 'my_alert_channel' using:
 
 	$ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text='alert!text!' # don't use double quote
@@ -75,5 +42,65 @@ many channels
 
 
 
+## 2. a python requests example
+
+# Configuration File (config.yml):
+Begin by copying config_requests.yml.example to config.yml
+
+# Do the necessary modification. In the check section, set the following parameters:
+
+Check:
+  getget_url: 'https://aaa.bbb.com/api'
+  getget_lines: 2 # Use 0 for VM, 1 for cloud
+  try_cnt: 3
+  try_sleep: 30 # 30 seconds
+
+Ensure that getget_lines is set to 2. The getget_url should return the following format (in text/html):
+
+Successful responses:
+2023-12-15 23:15:43 OK
+2023-12-15 23:15:55 OK
+
+Unsuccessful responses (accompanied by error codes):
+2023-12-15 23:15:43 OK 12 8
+2023-12-15 23:15:55 OK
+
+# In the SMS section, set the following parameters:
+
+SMS:
+  sms_cmd: 'curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ '
+
+Instead of SMS, we've transitioned to using Telegram for its cost-effectiveness. Inside check_friDay.py, the shell command is as follows:
+$ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text="alert!text!"
+
+# set up environment
+$ cd $HOME/venv
+$ /filepath/python3.11 -m venv --system-site-packages py311
+$ source py311/bin/activate
+$ pip install --upgrade pip
+$ $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
+$ pip install -r requirements_requests_py311.txt
+
+# Cron Job, example of cron command is in crontab.txt:
+*/5 * * * * $HOME/life_codes/alert_sms_telegram/check_friDay.sh >> /tmp/jie_aa.txt 2>&1 
+
+
+## 3. a python-telegram-bot example
+
+
+# set up environment
+
+$ cd $HOME/venv
+$ /filepath/python3.7 -m venv --system-site-packages py37t
+$ source py37t/bin/activate
+$ pip install --upgrade pip
+$ pip install -r requirements_requests_py37.txt
+
+# run the 'long polling' mode for telegram bot (there is also webhooks)
+
+$ cd $HOME/venv
+$ source py37t/bin/activate
+$ $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
+$ python telegram_bot_example.py
 
 
