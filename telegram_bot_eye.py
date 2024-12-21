@@ -136,10 +136,9 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
     elif query.data.startswith('set_'):
         the_, the_room, the_action = query.data.split('_')
         trigger_result = trigger_ir(the_room, the_action)
-        trigger_result = '⭕ ' + query.data + 'OK'
+        status_text = '⭕ ' + query.data + ' OK'
         if trigger_result != 'OK':
-            trigger_result = '❌ ' + query.data + 'error'
-        status_text = trigger_result
+            status_text = '❌ ' + query.data + ' error'
         await query.edit_message_text(text=status_text, reply_markup=get_back_keyboard())
 
     elif query.data == 'settings':
