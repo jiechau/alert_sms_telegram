@@ -62,6 +62,9 @@ def gather_sensor_data():
     return result
 
 
+# trigger if
+def trigger_ir(_room, _action):
+    return 'OK'
 
 
 
@@ -91,7 +94,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
     # icons
     # https://gist.github.com/rxaviers/7360908
-    # 📊⚙️📈 ♨️ ❄️ 📴 
+    # 📊⚙️📈 ♨️ ❄️ 📴 ⭕ ❌
     keyboard = [
         [InlineKeyboardButton("📊 Status", callback_data='status'),
          InlineKeyboardButton("⚙️ Settings", callback_data='settings')]
@@ -129,11 +132,20 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
         temperature_data = gather_sensor_data()
         status_text = "📊 eye Temperature:\n" + temperature_data
         await query.edit_message_text(text=status_text, reply_markup=get_back_keyboard())
-        
+
+    elif query.data.startswith('set_'):
+        the_, the_room, the_action = query.data.split('_')
+        trigger_result = trigger_ir(the_room, the_action)
+        trigger_result = '⭕ ' + query.data + 'OK'
+        if trigger_result != 'OK':
+            trigger_result = '❌ ' + query.data + 'error'
+        status_text = trigger_result
+        await query.edit_message_text(text=status_text, reply_markup=get_back_keyboard())
+
     elif query.data == 'settings':
         keyboard = [
-            [InlineKeyboardButton("🎉 客廳", callback_data='set_livingroom'),
-             InlineKeyboardButton("😴 臥室", callback_data='set_bedroom')],
+            [InlineKeyboardButton("🎉 客廳", callback_data='livingroom_menu'),
+             InlineKeyboardButton("😴 臥室", callback_data='bedroom_menu')],
             [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
         ]
         await query.edit_message_text(
@@ -141,11 +153,11 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    elif query.data == 'set_livingroom':
+    elif query.data == 'livingroom_menu':
         keyboard = [
-            [InlineKeyboardButton("🎉 ❄️ 客廳 冷氣", callback_data='set_livingroom1')],
-            [InlineKeyboardButton("🎉 ♨️ 客廳 暖氣", callback_data='set_livingroom2')],
-            [InlineKeyboardButton("🎉 📴 客廳 關機", callback_data='set_livingroom3')],
+            [InlineKeyboardButton("🎉 ❄️ 客廳 冷氣", callback_data='set_livingroom_cold')],
+            [InlineKeyboardButton("🎉 ♨️ 客廳 暖氣", callback_data='set_livingroom_warm')],
+            [InlineKeyboardButton("🎉 📴 客廳 關機", callback_data='set_livingroom_off')],
             [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
         ]
         await query.edit_message_text(
@@ -153,11 +165,11 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    elif query.data == 'set_bedroom':
+    elif query.data == 'bedroom_menu':
         keyboard = [
-            [InlineKeyboardButton("😴 ❄️ 臥室 冷氣", callback_data='set_bedroom1')],
-            [InlineKeyboardButton("😴 ♨️ 臥室 暖氣", callback_data='set_bedroom2')],
-            [InlineKeyboardButton("😴 📴 臥室 關機", callback_data='set_bedroom3')],
+            [InlineKeyboardButton("😴 ❄️ 臥室 冷氣", callback_data='set_bedroom_cold')],
+            [InlineKeyboardButton("😴 ♨️ 臥室 暖氣", callback_data='set_bedroom_warm')],
+            [InlineKeyboardButton("😴 📴 臥室 關機", callback_data='set_bedroom_off')],
             [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
         ]
         await query.edit_message_text(
