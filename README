@@ -94,7 +94,7 @@ $ cd $HOME/venv
 $ /filepath/python3.7 -m venv --system-site-packages py37t
 $ source py37t/bin/activate
 $ pip install --upgrade pip
-$ pip install -r requirements_requests_py37.txt
+$ pip install -r requirements_telegrambot_py37
 
 # run the 'long polling' mode for telegram bot (there is also webhooks)
 
