@@ -62,9 +62,21 @@ def gather_sensor_data():
     return result
 
 
-# trigger if
+# trigger ir
+import subprocess
+BLSH = '/home/pi/life_codes/python-broadlink/cli/broadlink_cli.sh'
 def trigger_ir(_room, _action):
-    return 'OK'
+    #em_this = myconfig['broadlink']['em_files'][myconfig['webhooks']['em'][_id]]
+    #sg_this = myconfig['broadlink']['signal_files'][myconfig['webhooks']['sg'][_id + '_' + _action]]
+    #command = [BLSH, em_this, sg_this]
+    command = ['echo', _room, _action]
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    status_code = result.returncode
+    if status_code == 0:
+        return 'OK'
+    else:
+        print(result.stderr)
+        return 'error'
 
 
 
