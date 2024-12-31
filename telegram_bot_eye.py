@@ -63,13 +63,27 @@ def gather_sensor_data():
 
 
 # trigger ir
+import time
 import subprocess
-BLSH = '/home/pi/life_codes/python-broadlink/cli/broadlink_cli.sh'
+BLSH = '/home/pi/life_codes/python-broadlink/cli/broadlink_cli_py37ir.sh'
 def trigger_ir(_room, _action):
-    #em_this = myconfig['broadlink']['em_files'][myconfig['webhooks']['em'][_id]]
-    #sg_this = myconfig['broadlink']['signal_files'][myconfig['webhooks']['sg'][_id + '_' + _action]]
-    #command = [BLSH, em_this, sg_this]
-    command = ['echo', _room, _action]
+    # set_livingroom_cold
+    # livingroom
+    # cold
+    em_this = '/home/pi/life_codes/python-broadlink/cli/file_em_em5'
+    if _room != 'livingroom':
+        em_this = '/home/pi/life_codes/python-broadlink/cli/file_em_em6'
+    sg_this = '/home/pi/life_codes/python-broadlink/cli/file_signal_eye_aircon_off'
+    if _action == 'hot':
+        sg_this = '/home/pi/life_codes/python-broadlink/cli/file_signal_eye_aircon_hot'
+    if _action == 'cold':
+        sg_this = '/home/pi/life_codes/python-broadlink/cli/file_signal_eye_aircon_cold'
+    command = [BLSH, em_this, sg_this]
+    # 1st
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    status_code = result.returncode
+    # 2nd
+    time.sleep(5)
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     status_code = result.returncode
     if status_code == 0:
@@ -167,7 +181,7 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
     elif query.data == 'livingroom_menu':
         keyboard = [
             [InlineKeyboardButton("🎉 ❄️ 客廳 冷氣", callback_data='set_livingroom_cold')],
-            [InlineKeyboardButton("🎉 ♨️ 客廳 暖氣", callback_data='set_livingroom_warm')],
+            [InlineKeyboardButton("🎉 ♨️ 客廳 暖氣", callback_data='set_livingroom_hot')],
             [InlineKeyboardButton("🎉 📴 客廳 關機", callback_data='set_livingroom_off')],
             [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
         ]
@@ -179,7 +193,7 @@ async def handle_callback(update: Update, context: CallbackContext) -> None:
     elif query.data == 'bedroom_menu':
         keyboard = [
             [InlineKeyboardButton("😴 ❄️ 臥室 冷氣", callback_data='set_bedroom_cold')],
-            [InlineKeyboardButton("😴 ♨️ 臥室 暖氣", callback_data='set_bedroom_warm')],
+            [InlineKeyboardButton("😴 ♨️ 臥室 暖氣", callback_data='set_bedroom_hot')],
             [InlineKeyboardButton("😴 📴 臥室 關機", callback_data='set_bedroom_off')],
             [InlineKeyboardButton("◀️ Back", callback_data='main_menu')]
         ]
