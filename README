@@ -78,7 +78,7 @@ $ cd $HOME/venv
 $ /filepath/python3.11 -m venv --system-site-packages py311
 $ source py311/bin/activate
 $ pip install --upgrade pip
-$ $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
+$ cd $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
 $ pip install -r requirements_requests_py311.txt
 
 # Cron Job, example of cron command is in crontab.txt:
