@@ -4,7 +4,6 @@ Project:
   idx: 'alert_sms_telegram_logs'
 Check:
   getget_url: 'https://aaa.bbb.com/api'
-  getget_lines: 2 # from vm:0, from cloud:1
   try_cnt: 3
   try_sleep: 30 # sec
 SMS:

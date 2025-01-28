@@ -18,7 +18,8 @@ def get_myconfig(_myconfig_file):
         #_myconfig = yaml.load(stream, Loader=yaml.CLoader)
         _myconfig = yaml.safe_load(stream)  # Replace yaml.load(stream, Loader=yaml.CLoader)
     return _myconfig
-myconfig = get_myconfig("config.yml")
+#myconfig = get_myconfig("config.yml")
+myconfig = get_myconfig("config_telegrambot.yml")
 TOKEN = myconfig['Telegram']['token']
 TARGET_CHAT_ID = myconfig['Telegram']['chat_id']
 # Configuration

@@ -51,19 +51,22 @@ Begin by copying config_requests.yml.example to config.yml
 
 Check:
   getget_url: 'https://aaa.bbb.com/api'
-  getget_lines: 2 # Use 0 for VM, 1 for cloud
   try_cnt: 3
   try_sleep: 30 # 30 seconds
 
-Ensure that getget_lines is set to 2. The getget_url should return the following format (in text/html):
+The getget_url should return the following format (in text/html):
 
 Successful responses:
-2023-12-15 23:15:43 OK
-2023-12-15 23:15:55 OK
+2025-01-22 14:31:00 39_fastapi_peering_local
+2025-01-27 11:43:17 39_fastapi_peering_AZtaiwan
+2025-01-27 11:43:28 39_fastapi_peering_outside
+... some more lines
 
 Unsuccessful responses (accompanied by error codes):
-2023-12-15 23:15:43 OK 12 8
-2023-12-15 23:15:55 OK
+2025-01-22 14:31:00 39_fastapi_peering_local 13 20
+2025-01-27 11:43:17 39_fastapi_peering_AZtaiwan 13
+2025-01-27 11:43:28 39_fastapi_peering_outside 13
+... some more lines
 
 # In the SMS section, set the following parameters:
 
@@ -111,3 +114,5 @@ mkdir -p /tmp/sensor
 echo $3 > /tmp/sensor/$2
 
 
+## 3. a telegram bot example
+cp config_telegrambot.yml.example config_telegrambot.yml

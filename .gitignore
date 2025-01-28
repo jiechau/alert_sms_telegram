@@ -1,4 +1,6 @@
 config.yml
+config_requests.yml
+config_telegrambot.yml
 .obsidian
 ignored/
 webclient/*
