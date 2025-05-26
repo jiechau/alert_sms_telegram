@@ -108,7 +108,7 @@ if not final_result:
   rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
 
 ## for test
-## curl_cmd = '/usr/bin/curl -k -s -o /dev/null -X POST https://api.telegram.org/bot6666240541:XXXXXXXXXXX/sendMessage -d chat_id=1111111 -d text="' + str(0) + ' ' + lt_text[0] + '"'
+## curl_cmd = '/usr/bin/curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=1111111 -d text="' + str(0) + ' ' + lt_text[0] + '"'
 #curl_cmd = sms_cmd + ' -d text="' + str(0) + ' ' + lt_text[0] + '"'
 #rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
 
