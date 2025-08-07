@@ -67,55 +67,68 @@ def check_line(line):
     except Exception:
         return False
 
-#%% start
-#print(getget_url)
-#print(try_cnt)
-#print(try_sleep)
 
+if __name__ == "__main__":
 
-i_cnt = 0
-final_result = False
-while (final_result is False) and (i_cnt < try_cnt):
-  #print(i_cnt)
-  i_cnt = i_cnt + 1
-  final_result = True
-  try:
-    response = requests.get(getget_url, verify=False)
-    msg = response.text
-    lt_text = msg.splitlines()
+    #%% start
+    #print(getget_url)
+    #print(try_cnt)
+    #print(try_sleep)
 
-    with ThreadPoolExecutor() as executor:
-      results = executor.map(check_line, lt_text)
-
-      for result in results:
-        #print(type(result))
-        if not result:
-          #print("Check failed")
-          #print(response.text)
-          final_result = False
-          #exit(False)
-
-  except:
+    i_cnt = 0
     final_result = False
-    msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' exception'
-  if not final_result:
-    time.sleep(try_sleep)
+    while (final_result is False) and (i_cnt < try_cnt):
+        #print(i_cnt)
+        i_cnt = i_cnt + 1
+        final_result = True
+        try:
+            #print('a')
+            response = requests.get(getget_url, verify=False)
+            msg = response.text
+            #print(msg) # null
+            lt_text = msg.splitlines()
+            #print(lt_text) # []
+            
+            # Check if we got any data to validate
+            if not lt_text:
+                #print("No data received from API")
+                final_result = False
+            else:
+                with ThreadPoolExecutor() as executor:
+                    results = executor.map(check_line, lt_text)
+                    #print(type(result))
+                    #print(result)
+                    for result in results:
+                        #print(type(result))
+                        #print(result)
+                        if not result:
+                            #print("Check failed")
+                            #print(response.text)
+                            final_result = False
+                            #exit(False)
 
-# final result
-if not final_result:
-  print(msg)
-  curl_cmd = sms_cmd + ' -d text="friDay error"'
-  rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
+        except:
+            #print('b')
+            final_result = False
+            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' exception'
+        if not final_result:
+            time.sleep(try_sleep)
 
-## for test
-## curl_cmd = '/usr/bin/curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=1111111 -d text="' + str(0) + ' ' + lt_text[0] + '"'
-#curl_cmd = sms_cmd + ' -d text="' + str(0) + ' ' + lt_text[0] + '"'
-#rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
+    # final result
+    if not final_result:
+        print(msg)
+        curl_cmd = sms_cmd + ' -d text="friDay error"'
+        rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
 
-## for test
-#import os
-#exit_status = os.system(curl_cmd)
-#time.sleep(10)
+    ## for test
+    ## curl_cmd = '/usr/bin/curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=1111111 -d text="' + str(0) + ' ' + lt_text[0] + '"'
+    #curl_cmd = sms_cmd + ' -d text="' + str(0) + ' ' + lt_text[0] + '"'
+    #rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
+
+    ## for test
+    #import os
+    #exit_status = os.system(curl_cmd)
+    #time.sleep(10)
 
 
 
