@@ -41,7 +41,7 @@ def check_line(line):
         monitored_services = [
           #  '39_fastapi_peering_local',
             '39_fastapi_peering_468office',
-          #  '39_fastapi_peering_468idc',
+            '39_fastapi_peering_468idc',
             '39_fastapi_peering_AZtaiwan',
           #  '39_fastapi_peering_AZtokyo',
             '39_fastapi_peering_outside'
