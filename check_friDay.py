@@ -15,9 +15,9 @@ def get_myconfig(_myconfig_file):
     return _myconfig
 #myconfig = get_myconfig("config.yml")
 myconfig = get_myconfig("config_requests.yml")
-getget_url = myconfig['Check']['getget_url']
-try_cnt = myconfig['Check']['try_cnt'] # 3
-try_sleep = myconfig['Check']['try_sleep'] # sec, use 60
+check_url = myconfig['Check_friday']['check_url']
+try_cnt = myconfig['Check_friday']['try_cnt'] # 3
+try_sleep = myconfig['Check_friday']['try_sleep'] # sec, use 60
 sms_cmd = myconfig['SMS']['sms_cmd']
 
 
@@ -71,7 +71,7 @@ def check_line(line):
 if __name__ == "__main__":
 
     #%% start
-    #print(getget_url)
+    #print(check_url)
     #print(try_cnt)
     #print(try_sleep)
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         final_result = True
         try:
             #print('a')
-            response = requests.get(getget_url, verify=False)
+            response = requests.get(check_url, verify=False)
             msg = response.text
             #print(msg) # null
             lt_text = msg.splitlines()
