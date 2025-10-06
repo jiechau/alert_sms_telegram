@@ -119,10 +119,10 @@ if __name__ == "__main__":
             if not result:
                 final_result = False
 
-        except:
+        except Exception as e:
             #print('b')
             final_result = False
-            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' exception'
+            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' exception: ' + str(e)
         if not final_result:
             time.sleep(try_sleep)
 
