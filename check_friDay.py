@@ -83,7 +83,7 @@ if __name__ == "__main__":
         final_result = True
         try:
             #print('a')
-            response = requests.get(check_url, verify=False)
+            response = requests.get(check_url, verify=False, timeout=2)
             msg = response.text
             #print(msg) # null
             lt_text = msg.splitlines()

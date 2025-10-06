@@ -111,7 +111,7 @@ if __name__ == "__main__":
         final_result = True
         try:
             #print('a')
-            response = requests.get(check_url, verify=False)
+            response = requests.get(check_url, verify=False, timeout=1)
             # json_content
             json_content = response.json()
             result = check_json(json_content)
