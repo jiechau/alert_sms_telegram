@@ -25,70 +25,55 @@ sms_cmd = myconfig['SMS']['sms_cmd']
 def check_json(_json_content):
     '''
 _json_content = {
-    "quote": false,
-    "order": false,
-    "contracts": true,
-    "cron": {
-        "is_trading_time": false,
-        "is_serving_time": true,
-        "IsConnectedLive_quote": false,
-        "IsConnectedLive_order": false,
-        "cron_exception": "",
-        "cron_datetime": "2023-10-07 07:28:15.416"
+  "status": {
+    "main": {
+      "boot_datetime": "2025-11-10 12:24:35.362",
+      "cron_datetime": "2025-11-10 13:38:11.569",
+      "OnContractDownloadComplete_datetime": "2025-11-10 11:59:44.882"
     },
-    "quote_api": {
-        "IsConnected": false,
-        "logonOK": false,
-        "LastErrorMsg": "",
-        "OnConnected_datetime": "2023-10-06 22:26:51.227",
-        "OnDisconnected_datetime": "2023-10-07 05:30:04.500",
-        "LogonOK_datetime": "2023-10-06 22:26:51.402",
-        "LogonFail_datetime": "",
-        "OnLogonResponseOK_ReplyString": "Logon OK!",
-        "OnLogonResponseOK_datetime": "2023-10-06 22:26:51.412",
-        "OnLogonResponseFail_ReplyString": "",
-        "OnLogonResponseFail_datetime": "",
-        "contracts": true,
-        "OnContractDownloadComplete_datetime": "2023-10-06 22:26:58.046"
+    "quote": {
+      "mega": {
+        "is_pivot_out_of_strike": false,
+        "normalized_position": 0.5,
+        "quote_cho": "5",
+        "quote_now": "5",
+        "cron_datetime": "2025-11-10 13:38:10.702",
+        "boot_datetime": "2025-11-10 11:59:33.896"
+      }
     },
-    "order_api": {
-        "EnableMEGACA": true,
-        "IsConnected": false,
-        "logonOK": false,
-        "SetAccountOK": false,
-        "LastErrorMsg": "",
-        "EnableMEGACAOK_datetime": "2023-10-06 22:26:50.664",
-        "EnableMEGACAFail_datetime": "",
-        "OnConnected_datetime": "2023-10-06 22:26:52.830",
-        "OnDisconnected_datetime": "2023-10-07 05:00:00.469",
-        "logonProxyOK_datetime": "2023-10-06 22:26:53.503",
-        "logonProxyFail_datetime": "",
-        "OnLogonResponseOK_ReplyString": "Login Mega DMA OK!( CID =46 )...logon ok",
-        "OnLogonResponseOK_datetime": "2023-10-06 22:26:53.911",
-        "OnLogonResponseFail_ReplyString": "",
-        "OnLogonResponseFail_datetime": "",
-        "SetAccountOK_datetime": "2023-10-06 22:26:54.511",
-        "SetAccountFail_datetime": ""
-    }
+    "trade": {}
+  }
 }
 '''
     try:
         _result = True
         _msg = ''
-        # Check if cron_datetime is within 10 seconds of current time
-        cron_datetime_str = _json_content.get('cron', {}).get('cron_datetime', '')
-        if cron_datetime_str:
-            cron_datetime = datetime.strptime(cron_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-            #print(cron_datetime)
-            current_datetime = datetime.now()
-            time_diff = abs((current_datetime - cron_datetime).total_seconds())
+        current_datetime = datetime.now()
+        
+        # Check status cron_datetime
+        status_cron_datetime_str = _json_content.get('status', {}).get('main', {}).get('cron_datetime', '')
+        if status_cron_datetime_str:
+            status_cron_datetime = datetime.strptime(status_cron_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+            time_diff = abs((current_datetime - status_cron_datetime).total_seconds())
             if time_diff > 10:
                 _result = False
-                _msg = f"cron stop: {cron_datetime_str}"
+                _msg = f"status cron stop: {status_cron_datetime_str}"
+                return {'result': _result, 'msg': _msg}
+        
+        # Check all quote elements' cron_datetime
+        quote_dict = _json_content.get('status', {}).get('quote', {})
+        for element_name, element_data in quote_dict.items():
+            if isinstance(element_data, dict):
+                element_cron_datetime_str = element_data.get('cron_datetime', '')
+                if element_cron_datetime_str:
+                    element_cron_datetime = datetime.strptime(element_cron_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+                    time_diff = abs((current_datetime - element_cron_datetime).total_seconds())
+                    if time_diff > 10:
+                        _result = False
+                        _msg = f"quote.{element_name} cron stop: {element_cron_datetime_str}"
+                        return {'result': _result, 'msg': _msg}
 
-        return {'result': _result,
-                'msg': _msg}
-        # return True # Everything is OK
+        return {'result': _result, 'msg': _msg}
         
     except Exception as e:
         return {'result': False,
