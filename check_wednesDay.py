@@ -52,26 +52,44 @@ _json_content = {
         
         # Check status cron_datetime
         status_cron_datetime_str = _json_content.get('status', {}).get('main', {}).get('cron_datetime', '')
-        if status_cron_datetime_str:
+        if not status_cron_datetime_str:
+            return {'result': False, 'msg': 'status cron_datetime is missing or empty'}
+        
+        if not isinstance(status_cron_datetime_str, str):
+            return {'result': False, 'msg': 'status cron_datetime is not a string'}
+        
+        try:
             status_cron_datetime = datetime.strptime(status_cron_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-            time_diff = abs((current_datetime - status_cron_datetime).total_seconds())
-            if time_diff > 10:
-                _result = False
-                _msg = f"status cron stop: {status_cron_datetime_str}"
-                return {'result': _result, 'msg': _msg}
+        except Exception as e:
+            return {'result': False, 'msg': f'status cron_datetime parse error: {str(e)}'}
+        
+        time_diff = abs((current_datetime - status_cron_datetime).total_seconds())
+        if time_diff > 10:
+            _result = False
+            _msg = f"status cron stop: {status_cron_datetime_str}"
+            return {'result': _result, 'msg': _msg}
         
         # Check all quote elements' cron_datetime
         quote_dict = _json_content.get('status', {}).get('quote', {})
         for element_name, element_data in quote_dict.items():
             if isinstance(element_data, dict):
                 element_cron_datetime_str = element_data.get('cron_datetime', '')
-                if element_cron_datetime_str:
+                if not element_cron_datetime_str:
+                    return {'result': False, 'msg': f'quote.{element_name} cron_datetime is missing or empty'}
+                
+                if not isinstance(element_cron_datetime_str, str):
+                    return {'result': False, 'msg': f'quote.{element_name} cron_datetime is not a string'}
+                
+                try:
                     element_cron_datetime = datetime.strptime(element_cron_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-                    time_diff = abs((current_datetime - element_cron_datetime).total_seconds())
-                    if time_diff > 10:
-                        _result = False
-                        _msg = f"quote.{element_name} cron stop: {element_cron_datetime_str}"
-                        return {'result': _result, 'msg': _msg}
+                except Exception as e:
+                    return {'result': False, 'msg': f'quote.{element_name} cron_datetime parse error: {str(e)}'}
+                
+                time_diff = abs((current_datetime - element_cron_datetime).total_seconds())
+                if time_diff > 10:
+                    _result = False
+                    _msg = f"quote.{element_name} cron stop: {element_cron_datetime_str}"
+                    return {'result': _result, 'msg': _msg}
 
         return {'result': _result, 'msg': _msg}
         
@@ -101,8 +119,9 @@ if __name__ == "__main__":
             json_content = response.json()
             result = check_json(json_content)
             # print(result)
-            if not result:
+            if not result['result']:
                 final_result = False
+                msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + result['msg']
 
         except Exception as e:
             #print('b')
