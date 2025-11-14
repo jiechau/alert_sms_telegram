@@ -51,7 +51,7 @@ _json_content = {
         current_datetime = datetime.now()
         
         # Check status cron_datetime
-        status_cron_datetime_str = _json_content.get('status', {}).get('main', {}).get('cron_datetime', '')
+        status_cron_datetime_str = _json_content.get('summary', {}).get('main', {}).get('cron_datetime', '')
         if not status_cron_datetime_str:
             return {'result': False, 'msg': 'status cron_datetime is missing or empty'}
         
