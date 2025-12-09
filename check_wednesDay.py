@@ -20,82 +20,148 @@ try_cnt = myconfig['Check_wednesday']['try_cnt'] # 3
 try_sleep = myconfig['Check_wednesday']['try_sleep'] # sec, use 5
 sms_cmd = myconfig['SMS']['sms_cmd']
 
+# Thresholds
+CRON_DATETIME_THRESHOLD_SEC = myconfig['Check_wednesday']['CRON_DATETIME_THRESHOLD_SEC'] # 10  # Maximum allowed time difference in seconds
+MEM_AVAIL_THRESHOLD_PERCENT = myconfig['Check_wednesday']['MEM_AVAIL_THRESHOLD_PERCENT'] # 10.0  # Minimum allowed memory availability in percent
+
 
 #
 def check_json(_json_content):
     '''
+# Example _json_content is in this format:
+# one ["status"] dict
+# many trade vendor dict under ["my_status"]["trade"]
+# many quote vendor dict under ["my_status"]["quote"]
 _json_content = {
   "status": {
-    "main": {
-      "boot_datetime": "2025-11-10 12:24:35.362",
-      "cron_datetime": "2025-11-10 13:38:11.569",
-      "OnContractDownloadComplete_datetime": "2025-11-10 11:59:44.882"
-    },
-    "quote": {
+    "cron_datetime": "2025-12-09 23:21:37.452",
+    "boot_datetime": "2025-12-09 23:20:10.282",
+    "OnContractDownloadComplete_datetime": "2025-12-09 22:02:43.146",
+  },
+  "my_status": {
+    "trade": {
       "mega": {
-        "is_pivot_out_of_strike": false,
-        "normalized_position": 0.5,
-        "quote_cho": "5",
-        "quote_now": "5",
-        "cron_datetime": "2025-11-10 13:38:10.702",
-        "boot_datetime": "2025-11-10 11:59:33.896"
+        "order": true,
+        "cron_datetime": "2025-12-09 23:21:32.608",
+        "boot_datetime": "2025-12-09 22:02:33.930",
+        "mem_free": "9.38G",
+        "mem_avail": "58.65%",
       }
     },
-    "trade": {}
+    "quote": {
+      "yuanta": {
+        "quote": true,
+        "order": true,
+        "contracts": false,
+        "regbook_num": 45,
+        "tradebook_num": 45,
+        "cron_datetime": "2025-12-09 23:21:37.042",
+        "boot_datetime": "2025-12-09 22:09:29.114",
+        "mem_free": "9.38G",
+        "mem_avail": "58.66%",
+        "response_time_ms": 6.124019622802734
+      },
+      "mega": {
+        "quote": true,
+        "contracts": true,
+        "orderbook_num": 20,
+        "tradebook_num": 3,
+        "cron_datetime": "2025-12-09 23:21:34.384",
+        "boot_datetime": "2025-12-09 22:02:33.930",
+        "mem_free": "9.38G",
+        "mem_avail": "58.65%",
+        "response_time_ms": 1597.2049236297607
+      }
+    }
   }
 }
 '''
     try:
-        _result = True
-        _msg = ''
         current_datetime = datetime.now()
         
+        # Helper function to check cron_datetime
+        def check_cron_datetime(datetime_str, location_name):
+            if not datetime_str:
+                return {'result': False, 'msg': f'{location_name} cron_datetime is missing or empty'}
+            
+            if not isinstance(datetime_str, str):
+                return {'result': False, 'msg': f'{location_name} cron_datetime is not a string'}
+            
+            try:
+                cron_datetime = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+            except Exception as e:
+                return {'result': False, 'msg': f'{location_name} cron_datetime parse error: {str(e)}'}
+            
+            time_diff = abs((current_datetime - cron_datetime).total_seconds())
+            if time_diff > CRON_DATETIME_THRESHOLD_SEC:
+                return {'result': False, 'msg': f'{location_name} cron stop: {datetime_str}'}
+            
+            return {'result': True, 'msg': ''}
+        
+        # Helper function to check mem_avail
+        def check_mem_avail(mem_avail_str, location_name):
+            if not mem_avail_str:
+                return {'result': False, 'msg': f'{location_name} mem_avail is missing or empty'}
+            
+            if not isinstance(mem_avail_str, str):
+                return {'result': False, 'msg': f'{location_name} mem_avail is not a string'}
+            
+            try:
+                # Remove '%' and convert to float
+                mem_avail_value = float(mem_avail_str.rstrip('%'))
+                if mem_avail_value < MEM_AVAIL_THRESHOLD_PERCENT:
+                    return {'result': False, 'msg': f'{location_name} mem_avail too low: {mem_avail_str}'}
+            except Exception as e:
+                return {'result': False, 'msg': f'{location_name} mem_avail parse error: {str(e)}'}
+            
+            return {'result': True, 'msg': ''}
+        
         # Check status cron_datetime
-        status_cron_datetime_str = _json_content.get('summary', {}).get('main', {}).get('cron_datetime', '')
-        if not status_cron_datetime_str:
-            return {'result': False, 'msg': 'status cron_datetime is missing or empty'}
+        status_dict = _json_content.get('status', {})
+        if not status_dict:
+            return {'result': False, 'msg': 'status section is missing'}
         
-        if not isinstance(status_cron_datetime_str, str):
-            return {'result': False, 'msg': 'status cron_datetime is not a string'}
+        status_cron_datetime_str = status_dict.get('cron_datetime', '')
+        result = check_cron_datetime(status_cron_datetime_str, 'status')
+        if not result['result']:
+            return result
         
-        try:
-            status_cron_datetime = datetime.strptime(status_cron_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-        except Exception as e:
-            return {'result': False, 'msg': f'status cron_datetime parse error: {str(e)}'}
-        
-        time_diff = abs((current_datetime - status_cron_datetime).total_seconds())
-        if time_diff > 10:
-            _result = False
-            _msg = f"status cron stop: {status_cron_datetime_str}"
-            return {'result': _result, 'msg': _msg}
-        
-        # Check all quote elements' cron_datetime
-        quote_dict = _json_content.get('status', {}).get('quote', {})
-        for element_name, element_data in quote_dict.items():
-            if isinstance(element_data, dict):
-                element_cron_datetime_str = element_data.get('cron_datetime', '')
-                if not element_cron_datetime_str:
-                    return {'result': False, 'msg': f'quote.{element_name} cron_datetime is missing or empty'}
+        # Check all trade vendors under my_status.trade
+        trade_dict = _json_content.get('my_status', {}).get('trade', {})
+        for vendor_name, vendor_data in trade_dict.items():
+            if isinstance(vendor_data, dict):
+                # Check cron_datetime
+                vendor_cron_datetime_str = vendor_data.get('cron_datetime', '')
+                result = check_cron_datetime(vendor_cron_datetime_str, f'trade.{vendor_name}')
+                if not result['result']:
+                    return result
                 
-                if not isinstance(element_cron_datetime_str, str):
-                    return {'result': False, 'msg': f'quote.{element_name} cron_datetime is not a string'}
+                # Check mem_avail
+                vendor_mem_avail_str = vendor_data.get('mem_avail', '')
+                result = check_mem_avail(vendor_mem_avail_str, f'trade.{vendor_name}')
+                if not result['result']:
+                    return result
+        
+        # Check all quote vendors under my_status.quote
+        quote_dict = _json_content.get('my_status', {}).get('quote', {})
+        for vendor_name, vendor_data in quote_dict.items():
+            if isinstance(vendor_data, dict):
+                # Check cron_datetime
+                vendor_cron_datetime_str = vendor_data.get('cron_datetime', '')
+                result = check_cron_datetime(vendor_cron_datetime_str, f'quote.{vendor_name}')
+                if not result['result']:
+                    return result
                 
-                try:
-                    element_cron_datetime = datetime.strptime(element_cron_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-                except Exception as e:
-                    return {'result': False, 'msg': f'quote.{element_name} cron_datetime parse error: {str(e)}'}
-                
-                time_diff = abs((current_datetime - element_cron_datetime).total_seconds())
-                if time_diff > 10:
-                    _result = False
-                    _msg = f"quote.{element_name} cron stop: {element_cron_datetime_str}"
-                    return {'result': _result, 'msg': _msg}
-
-        return {'result': _result, 'msg': _msg}
+                # Check mem_avail
+                vendor_mem_avail_str = vendor_data.get('mem_avail', '')
+                result = check_mem_avail(vendor_mem_avail_str, f'quote.{vendor_name}')
+                if not result['result']:
+                    return result
+        
+        return {'result': True, 'msg': ''}
         
     except Exception as e:
-        return {'result': False,
-                'msg': str(e)}
+        return {'result': False, 'msg': f'Exception: {str(e)}'}
 
 
 if __name__ == "__main__":

@@ -8,6 +8,8 @@ Check_friday:
   try_sleep: 30 # sec
 Check_wednesday:
   check_url: 'https://aaa.bbb.com/api'
+  CRON_DATETIME_THRESHOLD_SEC: 10  # Maximum allowed time difference in seconds
+  MEM_AVAIL_THRESHOLD_PERCENT: 10.0  # Minimum allowed memory availability in percent
   try_cnt: 3
   try_sleep: 5 # sec
 SMS:
