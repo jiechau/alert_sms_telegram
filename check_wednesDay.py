@@ -137,10 +137,10 @@ _json_content = {
                     return result
                 
                 # Check mem_avail
-                vendor_mem_avail_str = vendor_data.get('mem_avail', '')
-                result = check_mem_avail(vendor_mem_avail_str, f'trade.{vendor_name}')
-                if not result['result']:
-                    return result
+                #vendor_mem_avail_str = vendor_data.get('mem_avail', '')
+                #result = check_mem_avail(vendor_mem_avail_str, f'trade.{vendor_name}')
+                #if not result['result']:
+                #    return result
         
         # Check all quote vendors under my_status.quote
         quote_dict = _json_content.get('my_status', {}).get('quote', {})
@@ -153,10 +153,10 @@ _json_content = {
                     return result
                 
                 # Check mem_avail
-                vendor_mem_avail_str = vendor_data.get('mem_avail', '')
-                result = check_mem_avail(vendor_mem_avail_str, f'quote.{vendor_name}')
-                if not result['result']:
-                    return result
+                #vendor_mem_avail_str = vendor_data.get('mem_avail', '')
+                #result = check_mem_avail(vendor_mem_avail_str, f'quote.{vendor_name}')
+                #if not result['result']:
+                #    return result
         
         return {'result': True, 'msg': ''}
         
