@@ -19,6 +19,7 @@ check_url = myconfig['Check_wednesday']['check_url']
 try_cnt = myconfig['Check_wednesday']['try_cnt'] # 3
 try_sleep = myconfig['Check_wednesday']['try_sleep'] # sec, use 5
 sms_cmd = myconfig['SMS']['sms_cmd']
+auth_tokens = myconfig['Check_wednesday'].get('auth_tokens', [])
 
 # Thresholds
 CRON_DATETIME_THRESHOLD_SEC = myconfig['Check_wednesday']['CRON_DATETIME_THRESHOLD_SEC'] # 10  # Maximum allowed time difference in seconds
@@ -180,21 +181,35 @@ if __name__ == "__main__":
         #print(i_cnt)
         i_cnt = i_cnt + 1
         final_result = True
-        try:
-            #print('a')
-            response = requests.get(check_url, verify=False, timeout=1)
-            # json_content
-            json_content = response.json()
-            result = check_json(json_content)
-            # print(result)
-            if not result['result']:
-                final_result = False
-                msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + result['msg']
+        
+        # Try each auth token
+        tokens_to_try = auth_tokens if auth_tokens else [None]
+        for token in tokens_to_try:
+            try:
+                #print('a')
+                headers = {}
+                if token:
+                    headers['Authorization'] = token
+                
+                response = requests.get(check_url, headers=headers, verify=False, timeout=1)
+                # json_content
+                json_content = response.json()
+                result = check_json(json_content)
+                # print(result)
+                if not result['result']:
+                    final_result = False
+                    msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + result['msg']
+                else:
+                    # Success with this token
+                    final_result = True
+                    msg = ''
+                    break
 
-        except Exception as e:
-            #print('b')
-            final_result = False
-            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' exception: ' + str(e)
+            except Exception as e:
+                #print('b')
+                final_result = False
+                msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' exception: ' + str(e)
+        
         if not final_result:
             time.sleep(try_sleep)
 
