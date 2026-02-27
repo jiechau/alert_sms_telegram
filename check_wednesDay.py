@@ -191,7 +191,7 @@ if __name__ == "__main__":
                 if token:
                     headers['Authorization'] = token
                 
-                response = requests.get(check_url, headers=headers, verify=False, timeout=1)
+                response = requests.get(check_url, headers=headers, verify=False, timeout=3)
                 # json_content
                 json_content = response.json()
                 result = check_json(json_content)
