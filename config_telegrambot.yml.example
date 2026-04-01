@@ -1,3 +1,3 @@
 Telegram:
-  token: 'alert_sms_telegram'
-  chat_id: 'local' 
+  token: 'XXX:YYY'
+  chat_id: 'ZZZ' 

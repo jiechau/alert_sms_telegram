@@ -26,7 +26,6 @@ CRON_DATETIME_THRESHOLD_SEC = myconfig['Check_wednesday']['CRON_DATETIME_THRESHO
 if_check_MEM = myconfig['Check_wednesday']['if_check_MEM']
 MEM_AVAIL_THRESHOLD_PERCENT = myconfig['Check_wednesday']['MEM_AVAIL_THRESHOLD_PERCENT'] # 10.0  # Minimum allowed memory availability in percent
 
-
 #
 def check_json(_json_content):
     '''
@@ -78,6 +77,7 @@ _json_content = {
   }
 }
 '''
+
     try:
         current_datetime = datetime.now()
         
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     # final result
     if not final_result:
         print(msg)
-        curl_cmd = sms_cmd + ' -d text="wednesDay error"'
+        curl_cmd = sms_cmd + ' -d text="wednesDay ' + msg + '"'
         rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
 
     ## for test
