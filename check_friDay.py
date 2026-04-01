@@ -20,6 +20,7 @@ try_cnt = myconfig['Check_friday']['try_cnt'] # 3
 try_sleep = myconfig['Check_friday']['try_sleep'] # sec, use 60
 sms_cmd = myconfig['SMS']['sms_cmd']
 
+final_msg = ''
 
 #
 '''
@@ -31,10 +32,14 @@ sms_cmd = myconfig['SMS']['sms_cmd']
 2025-01-23 10:54:44 39_fastapi_peering_outside
 '''
 def check_line(line):
+
+    global final_msg
+
     try:
         # Split line into timestamp and message
         parts = line.split(' ', 2)
         if len(parts) < 3:
+            final_msg = f"{line}"
             return False
             
         # Check if it's one of the monitored services
@@ -53,6 +58,7 @@ def check_line(line):
             
         # Check if there are numbers after service name
         if len(parts[2].split()) > 1:
+            final_msg = f"{line}"
             return False
             
         # Check timestamp
@@ -60,6 +66,7 @@ def check_line(line):
         time_diff = datetime.now() - timestamp
         if time_diff > timedelta(minutes=5):
             #print('aaa')
+            final_msg = f"{line}"
             return False
             
         return True # Everything is OK
@@ -117,7 +124,7 @@ if __name__ == "__main__":
     # final result
     if not final_result:
         print(msg)
-        curl_cmd = sms_cmd + ' -d text="friDay error"'
+        curl_cmd = sms_cmd + ' -d text="friDay ' + final_msg + '"'
         rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
 
     ## for test
