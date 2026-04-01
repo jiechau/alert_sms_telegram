@@ -16,6 +16,8 @@ def get_myconfig(_myconfig_file):
 #myconfig = get_myconfig("config.yml")
 myconfig = get_myconfig("config_requests.yml")
 check_url = myconfig['Check_wednesday']['check_url']
+check_url1 = myconfig['Check_wednesday']['check_url1']
+check_url2 = myconfig['Check_wednesday']['check_url2']
 try_cnt = myconfig['Check_wednesday']['try_cnt'] # 3
 try_sleep = myconfig['Check_wednesday']['try_sleep'] # sec, use 5
 sms_cmd = myconfig['SMS']['sms_cmd']
@@ -166,6 +168,66 @@ _json_content = {
     except Exception as e:
         return {'result': False, 'msg': f'Exception: {str(e)}'}
 
+#
+def check_json2(_json_content):
+    '''
+_json_content =
+{
+    "symbol_c": "MXFD6",
+    "msg_time_c": "14:35:51",
+    "bid1_price_c": "0",
+    "match_price_c": "0",
+    "time_value_c": 0,
+    "ask1_price_c": "0",
+    "match_time_c": "-",
+    "strike_price": "-",
+    "OnOrderBook_datetime": "-",
+    "OnTrade_datetime": "2026-04-01 14:35:51.148674",
+    "basis": 0.0,
+    "is_test_match": true
+}
+'''
+
+    try:
+        current_datetime = datetime.now()
+
+        # check the differenct btwn OnTrade_datetime and current time, can't > 30 sec
+        on_trade_datetime_str = _json_content.get('OnTrade_datetime', '')
+        if not on_trade_datetime_str:
+            return {'result': False, 'msg': 'OnTrade_datetime is missing or empty'}
+        if not isinstance(on_trade_datetime_str, str):
+            return {'result': False, 'msg': 'OnTrade_datetime is not a string'}
+        try:
+            on_trade_datetime = datetime.strptime(on_trade_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+        except Exception as e:
+            return {'result': False, 'msg': f'OnTrade_datetime parse error: {str(e)}'}
+        time_diff = abs((current_datetime - on_trade_datetime).total_seconds())
+        if time_diff > CRON_DATETIME_THRESHOLD_SEC: # 30 sec
+            return {'result': False, 'msg': f'OnTrade_datetime > 30 sec: {time_diff}'}
+            #pass
+        
+        # check the differenct btwn msg_time_c and current time, can't > 30 sec
+        # "msg_time_c" is in this format "14:35:51"
+        msg_time_c_str = _json_content.get('msg_time_c', '')
+        if not msg_time_c_str:
+            return {'result': False, 'msg': 'msg_time_c is missing or empty'}
+        if not isinstance(msg_time_c_str, str):
+            return {'result': False, 'msg': 'msg_time_c is not a string'}
+        try:
+            msg_time_c = datetime.strptime(msg_time_c_str, "%H:%M:%S").time()
+            msg_datetime_c = datetime.combine(current_datetime.date(), msg_time_c)
+        except Exception as e:
+            return {'result': False, 'msg': f'msg_time_c parse error: {str(e)}'}
+        time_diff = abs((current_datetime - msg_datetime_c).total_seconds())
+        if time_diff > CRON_DATETIME_THRESHOLD_SEC: # 30 sec
+            return {'result': False, 'msg': f'msg_time_c > 30 sec: {time_diff}'}
+
+        # finally
+        return {'result': True, 'msg': ''}
+        
+    except Exception as e:
+        return {'result': False, 'msg': f'Exception: {str(e)}'}
+
 
 if __name__ == "__main__":
 
@@ -203,7 +265,28 @@ if __name__ == "__main__":
                     # Success with this token
                     final_result = True
                     msg = ''
-                    break
+                    
+                # add another check
+                if final_result:
+
+                    response1 = requests.get(check_url1, headers=headers, verify=False, timeout=3)
+                    is_trading_time = response1.json().get('is_trading_time', True) # default to True if key is missing
+
+                    if is_trading_time: # is trading time
+
+                        response = requests.get(check_url2, headers=headers, verify=False, timeout=3)
+                        # json_content
+                        json_content = response.json()
+                        result = check_json2(json_content)
+                        # print(result)
+                        if not result['result']:
+                            final_result = False
+                            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + result['msg']
+                        else:
+                            # Success with this token
+                            final_result = True
+                            msg = ''
+
 
             except Exception as e:
                 #print('b')
