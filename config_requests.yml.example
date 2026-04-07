@@ -10,6 +10,7 @@ Check_wednesday:
   check_url: 'https://options/info' # f_options
   check_url1: 'https://options/is_trading_time' # f_options
   check_url2: 'https://options/get_strategy_quote' # f_options
+  check_url3: 'https://optionss.jiechau.me/dashboard_data' # f_options
   CRON_DATETIME_THRESHOLD_SEC: 30  # Maximum allowed time difference in seconds
   if_check_MEM: True
   MEM_AVAIL_THRESHOLD_PERCENT: 10.0  # Minimum allowed memory availability in percent

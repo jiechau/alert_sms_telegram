@@ -18,6 +18,7 @@ myconfig = get_myconfig("config_requests.yml")
 check_url = myconfig['Check_wednesday']['check_url']
 check_url1 = myconfig['Check_wednesday']['check_url1']
 check_url2 = myconfig['Check_wednesday']['check_url2']
+check_url3 = myconfig['Check_wednesday']['check_url3']
 try_cnt = myconfig['Check_wednesday']['try_cnt'] # 3
 try_sleep = myconfig['Check_wednesday']['try_sleep'] # sec, use 5
 sms_cmd = myconfig['SMS']['sms_cmd']
@@ -229,6 +230,65 @@ _json_content =
         return {'result': False, 'msg': f'Exception: {str(e)}'}
 
 
+def check_json3(_json_content):
+    '''
+_json_content =
+{
+    "yuanta": {
+        "MXFD6": {
+            "symbol": "MXFD6",
+            "msg_time": "10:58:05",
+            "bid1_price": "33136",
+            "match_price": "33138",
+            "ask1_price": "33139",
+            "match_time": "10:58:04",
+            "OnOrderBook_datetime": "-",
+            "OnTrade_datetime": "2026-04-07 10:58:05.377750",
+            "is_test_match": false
+        },
+        "MXFE6": {
+            "symbol": "MXFE6",
+            "msg_time": "10:58:05",
+            "bid1_price": "33258",
+            "match_price": "33275",
+            "ask1_price": "33266",
+            "match_time": "10:57:16",
+            "OnOrderBook_datetime": "-",
+            "OnTrade_datetime": "2026-04-07 10:58:05.379783",
+            "is_test_match": false
+        }
+    },
+    "mega": {}
+}
+    '''
+
+    try:
+        current_datetime = datetime.now()
+
+        for vendor_name, vendor_data in _json_content.items():
+            if not isinstance(vendor_data, dict):
+                continue
+            for symbol, symbol_data in vendor_data.items():
+                if not isinstance(symbol_data, dict):
+                    continue
+                on_trade_datetime_str = symbol_data.get('OnTrade_datetime', '')
+                if not on_trade_datetime_str:
+                    return {'result': False, 'msg': f'{vendor_name}.{symbol} OnTrade_datetime is missing or empty'}
+                if not isinstance(on_trade_datetime_str, str):
+                    return {'result': False, 'msg': f'{vendor_name}.{symbol} OnTrade_datetime is not a string'}
+                try:
+                    on_trade_datetime = datetime.strptime(on_trade_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+                except Exception as e:
+                    return {'result': False, 'msg': f'{vendor_name}.{symbol} OnTrade_datetime parse error: {str(e)}'}
+                time_diff = abs((current_datetime - on_trade_datetime).total_seconds())
+                if time_diff > CRON_DATETIME_THRESHOLD_SEC:
+                    return {'result': False, 'msg': f'{vendor_name}.{symbol} OnTrade_datetime > {CRON_DATETIME_THRESHOLD_SEC} sec: {time_diff}'}
+
+        return {'result': True, 'msg': ''}
+
+    except Exception as e:
+        return {'result': False, 'msg': f'Exception: {str(e)}'}
+
 if __name__ == "__main__":
 
     #%% start
@@ -267,6 +327,7 @@ if __name__ == "__main__":
                     msg = ''
                     
                 # add another check
+                # /get_strategy_quote
                 if final_result:
 
                     response1 = requests.get(check_url1, headers=headers, verify=False, timeout=3)
@@ -287,6 +348,27 @@ if __name__ == "__main__":
                             final_result = True
                             msg = ''
 
+                # add another check
+                # /get_strategy_quote
+                if final_result:
+
+                    response1 = requests.get(check_url1, headers=headers, verify=False, timeout=3)
+                    is_trading_time = response1.json().get('is_trading_time', True) # default to True if key is missing
+
+                    if is_trading_time: # is trading time
+
+                        response = requests.post(check_url3, headers=headers, json={"choice": "dashboard_futures"}, verify=False, timeout=3)
+                        # json_content
+                        json_content = response.json()
+                        result = check_json3(json_content)
+                        # print(result)
+                        if not result['result']:
+                            final_result = False
+                            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + result['msg']
+                        else:
+                            # Success with this token
+                            final_result = True
+                            msg = ''
 
             except Exception as e:
                 #print('b')
