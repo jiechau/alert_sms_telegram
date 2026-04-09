@@ -18,7 +18,6 @@ myconfig = get_myconfig("config_requests.yml")
 check_url = myconfig['Check_wednesday']['check_url']
 check_url1 = myconfig['Check_wednesday']['check_url1']
 check_url2 = myconfig['Check_wednesday']['check_url2']
-check_url3 = myconfig['Check_wednesday']['check_url3']
 try_cnt = myconfig['Check_wednesday']['try_cnt'] # 3
 try_sleep = myconfig['Check_wednesday']['try_sleep'] # sec, use 5
 sms_cmd = myconfig['SMS']['sms_cmd']
@@ -26,6 +25,7 @@ auth_tokens = myconfig['Check_wednesday'].get('auth_tokens', [])
 
 # Thresholds
 CRON_DATETIME_THRESHOLD_SEC = myconfig['Check_wednesday']['CRON_DATETIME_THRESHOLD_SEC'] # 10  # Maximum allowed time difference in seconds
+OnTrade_DATETIME_THRESHOLD_SEC = myconfig['Check_wednesday']['OnTrade_DATETIME_THRESHOLD_SEC'] # 10  # Maximum allowed time difference in seconds
 if_check_MEM = myconfig['Check_wednesday']['if_check_MEM']
 MEM_AVAIL_THRESHOLD_PERCENT = myconfig['Check_wednesday']['MEM_AVAIL_THRESHOLD_PERCENT'] # 10.0  # Minimum allowed memory availability in percent
 
@@ -242,30 +242,26 @@ _json_content =
     }
 }
 '''
+    #print(_json_content)
     try:
         # check stocks's elements, if now is btwn 09:00 and 13:30 and OnTrade_datetime is not empty, then check the time diff
         stocks_dict = _json_content.get('stocks', {})
         for stock_name, stock_data in stocks_dict.items():
             if isinstance(stock_data, dict):
-                msg_time_c_str = stock_data.get('msg_time_c', '')
-                match_time_c_str = stock_data.get('match_time_c', '')
                 on_trade_datetime_str = stock_data.get('OnTrade_datetime', '')
-                
-                if msg_time_c_str and match_time_c_str and on_trade_datetime_str:
+                if on_trade_datetime_str:
+                    #print(f'{stock_name} OnTrade_datetime: {on_trade_datetime_str}')
                     try:
-                        msg_time_c = datetime.strptime(msg_time_c_str, "%H:%M:%S").time()
-                        match_time_c = datetime.strptime(match_time_c_str, "%H:%M:%S").time()
                         on_trade_datetime = datetime.strptime(on_trade_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-                        
                         # Check if current time is between 09:00 and 13:30
                         now_time = datetime.now().time()
                         if now_time >= datetime.strptime("09:00:00", "%H:%M:%S").time() and now_time <= datetime.strptime("13:30:00", "%H:%M:%S").time():
                             # Check time difference between on_trade_datetime and current time
                             time_diff_sec = abs((datetime.now() - on_trade_datetime).total_seconds())
-                            if time_diff_sec > CRON_DATETIME_THRESHOLD_SEC:
-                                return {'result': False, 'msg': f'{_json_content['strategy_id']} {stock_name} OnTrade_datetime too old: {on_trade_datetime_str}'}
+                            if time_diff_sec > OnTrade_DATETIME_THRESHOLD_SEC:
+                                return {'result': False, 'msg': f'{_json_content["strategy_id"]} {stock_name} OnTrade_datetime too old: {on_trade_datetime_str}'}
                     except Exception as e:
-                        return {'result': False, 'msg': f'{_json_content['strategy_id']} {stock_name} datetime parse error: {str(e)}'}
+                        return {'result': False, 'msg': f'{_json_content["strategy_id"]} {stock_name} datetime parse error: {str(e)}'}
 
         # check future's elements, if OnTrade_datetime is not empty, then check the time diff
         futures_dict = _json_content.get('futures', {})
@@ -274,15 +270,16 @@ _json_content =
                 on_trade_datetime_str = future_data.get('OnTrade_datetime', '')
                 
                 if on_trade_datetime_str:
+                    #print(f'{future_name} OnTrade_datetime: {on_trade_datetime_str}')
                     try:
                         on_trade_datetime = datetime.strptime(on_trade_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
                         
                         # Check time difference between on_trade_datetime and current time
                         time_diff_sec = abs((datetime.now() - on_trade_datetime).total_seconds())
-                        if time_diff_sec > CRON_DATETIME_THRESHOLD_SEC:
-                            return {'result': False, 'msg': f'{_json_content['strategy_id']} {future_name} OnTrade_datetime too old: {on_trade_datetime_str}'}
+                        if time_diff_sec > OnTrade_DATETIME_THRESHOLD_SEC:
+                            return {'result': False, 'msg': f'{_json_content["strategy_id"]} {future_name} OnTrade_datetime too old: {on_trade_datetime_str}'}
                     except Exception as e:
-                        return {'result': False, 'msg': f'{_json_content['strategy_id']} {future_name} datetime parse error: {str(e)}'}
+                        return {'result': False, 'msg': f'{_json_content["strategy_id"]} {future_name} datetime parse error: {str(e)}'}
 
         # finally
         return {'result': True, 'msg': ''}
