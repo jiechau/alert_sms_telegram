@@ -174,54 +174,115 @@ def check_json2(_json_content):
     '''
 _json_content =
 {
-    "symbol_c": "MXFD6",
-    "msg_time_c": "14:35:51",
-    "bid1_price_c": "0",
-    "match_price_c": "0",
-    "time_value_c": 0,
-    "ask1_price_c": "0",
-    "match_time_c": "-",
-    "strike_price": "-",
-    "OnOrderBook_datetime": "-",
-    "OnTrade_datetime": "2026-04-01 14:35:51.148674",
-    "basis": 0.0,
-    "is_test_match": true
+    "strategy_id": "FARR",
+    "stocks": {
+        "i00000": {
+            "symbol_c": "i00000",
+            "msg_time_c": "16:47:36",
+            "bid1_price_c": "0",
+            "match_price_c": "34861.1600",
+            "time_value_c": 0,
+            "ask1_price_c": "0",
+            "match_time_c": "13:30:00",
+            "strike_price": "-",
+            "OnOrderBook_datetime": "-",
+            "OnTrade_datetime": "2026-04-09 16:47:36.971331",
+            "is_test_match": false
+        }
+    },
+    "futures": {
+        "MXFE6": {
+            "symbol_c": "MXFE6",
+            "msg_time_c": "18:54:58",
+            "bid1_price_c": "34944",
+            "match_price_c": "34944",
+            "time_value_c": 0,
+            "ask1_price_c": "34952",
+            "match_time_c": "18:54:16",
+            "strike_price": "-",
+            "OnOrderBook_datetime": "-",
+            "OnTrade_datetime": "2026-04-09 18:54:58.057716",
+            "basis": 82.8,
+            "is_test_match": false
+        }
+    },
+    "options": {
+        "34500": {
+            "symbol_c": "TXO34500D6",
+            "msg_time_c": "18:54:57",
+            "bid1_price_c": "685.0",
+            "match_price_c": "700.0",
+            "ask1_price_c": "705.0",
+            "match_time_c": "18:51:31",
+            "OnOrderBook_datetime_c": "-",
+            "OnTrade_datetime_c": "2026-04-09 18:54:57.569516",
+            "intrinsic_value_c": 361.1600000000035,
+            "time_value_c": 333.8399999999965,
+            "intrinsic_value_future_c": 444.0,
+            "time_value_future_c": 251.0,
+            "is_test_match_c": false,
+            "time_value_diff_future": -128.0,
+            "strike_price": 34500,
+            "match_time_p": "18:54:13",
+            "ask1_price_p": "382.0",
+            "match_price_p": "379.0",
+            "bid1_price_p": "376.0",
+            "msg_time_p": "18:54:56",
+            "symbol_p": "TXO34500P6",
+            "OnOrderBook_datetime_p": "-",
+            "OnTrade_datetime_p": "2026-04-09 18:54:56.564626",
+            "intrinsic_value_p": 0,
+            "time_value_p": 379.0,
+            "intrinsic_value_future_p": 0,
+            "time_value_future_p": 379.0,
+            "is_test_match_p": false,
+            "time_value_diff": -45.16000000000349
+        },
+        ...
+    }
 }
 '''
-
     try:
-        current_datetime = datetime.now()
+        # check stocks's elements, if now is btwn 09:00 and 13:30 and OnTrade_datetime is not empty, then check the time diff
+        stocks_dict = _json_content.get('stocks', {})
+        for stock_name, stock_data in stocks_dict.items():
+            if isinstance(stock_data, dict):
+                msg_time_c_str = stock_data.get('msg_time_c', '')
+                match_time_c_str = stock_data.get('match_time_c', '')
+                on_trade_datetime_str = stock_data.get('OnTrade_datetime', '')
+                
+                if msg_time_c_str and match_time_c_str and on_trade_datetime_str:
+                    try:
+                        msg_time_c = datetime.strptime(msg_time_c_str, "%H:%M:%S").time()
+                        match_time_c = datetime.strptime(match_time_c_str, "%H:%M:%S").time()
+                        on_trade_datetime = datetime.strptime(on_trade_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+                        
+                        # Check if current time is between 09:00 and 13:30
+                        now_time = datetime.now().time()
+                        if now_time >= datetime.strptime("09:00:00", "%H:%M:%S").time() and now_time <= datetime.strptime("13:30:00", "%H:%M:%S").time():
+                            # Check time difference between on_trade_datetime and current time
+                            time_diff_sec = abs((datetime.now() - on_trade_datetime).total_seconds())
+                            if time_diff_sec > CRON_DATETIME_THRESHOLD_SEC:
+                                return {'result': False, 'msg': f'{_json_content['strategy_id']} {stock_name} OnTrade_datetime too old: {on_trade_datetime_str}'}
+                    except Exception as e:
+                        return {'result': False, 'msg': f'{_json_content['strategy_id']} {stock_name} datetime parse error: {str(e)}'}
 
-        # check the differenct btwn OnTrade_datetime and current time, can't > 30 sec
-        on_trade_datetime_str = _json_content.get('OnTrade_datetime', '')
-        if not on_trade_datetime_str:
-            return {'result': False, 'msg': 'OnTrade_datetime is missing or empty'}
-        if not isinstance(on_trade_datetime_str, str):
-            return {'result': False, 'msg': 'OnTrade_datetime is not a string'}
-        try:
-            on_trade_datetime = datetime.strptime(on_trade_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-        except Exception as e:
-            return {'result': False, 'msg': f'OnTrade_datetime parse error: {str(e)}'}
-        time_diff = abs((current_datetime - on_trade_datetime).total_seconds())
-        if time_diff > CRON_DATETIME_THRESHOLD_SEC: # 30 sec
-            return {'result': False, 'msg': f'OnTrade_datetime > 30 sec: {time_diff}'}
-            #pass
-        
-        # check the differenct btwn msg_time_c and current time, can't > 30 sec
-        # "msg_time_c" is in this format "14:35:51"
-        msg_time_c_str = _json_content.get('msg_time_c', '')
-        if not msg_time_c_str:
-            return {'result': False, 'msg': 'msg_time_c is missing or empty'}
-        if not isinstance(msg_time_c_str, str):
-            return {'result': False, 'msg': 'msg_time_c is not a string'}
-        try:
-            msg_time_c = datetime.strptime(msg_time_c_str, "%H:%M:%S").time()
-            msg_datetime_c = datetime.combine(current_datetime.date(), msg_time_c)
-        except Exception as e:
-            return {'result': False, 'msg': f'msg_time_c parse error: {str(e)}'}
-        time_diff = abs((current_datetime - msg_datetime_c).total_seconds())
-        if time_diff > CRON_DATETIME_THRESHOLD_SEC: # 30 sec
-            return {'result': False, 'msg': f'msg_time_c > 30 sec: {time_diff}'}
+        # check future's elements, if OnTrade_datetime is not empty, then check the time diff
+        futures_dict = _json_content.get('futures', {})
+        for future_name, future_data in futures_dict.items():
+            if isinstance(future_data, dict):
+                on_trade_datetime_str = future_data.get('OnTrade_datetime', '')
+                
+                if on_trade_datetime_str:
+                    try:
+                        on_trade_datetime = datetime.strptime(on_trade_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+                        
+                        # Check time difference between on_trade_datetime and current time
+                        time_diff_sec = abs((datetime.now() - on_trade_datetime).total_seconds())
+                        if time_diff_sec > CRON_DATETIME_THRESHOLD_SEC:
+                            return {'result': False, 'msg': f'{_json_content['strategy_id']} {future_name} OnTrade_datetime too old: {on_trade_datetime_str}'}
+                    except Exception as e:
+                        return {'result': False, 'msg': f'{_json_content['strategy_id']} {future_name} datetime parse error: {str(e)}'}
 
         # finally
         return {'result': True, 'msg': ''}
@@ -230,64 +291,6 @@ _json_content =
         return {'result': False, 'msg': f'Exception: {str(e)}'}
 
 
-def check_json3(_json_content):
-    '''
-_json_content =
-{
-    "yuanta": {
-        "MXFD6": {
-            "symbol": "MXFD6",
-            "msg_time": "10:58:05",
-            "bid1_price": "33136",
-            "match_price": "33138",
-            "ask1_price": "33139",
-            "match_time": "10:58:04",
-            "OnOrderBook_datetime": "-",
-            "OnTrade_datetime": "2026-04-07 10:58:05.377750",
-            "is_test_match": false
-        },
-        "MXFE6": {
-            "symbol": "MXFE6",
-            "msg_time": "10:58:05",
-            "bid1_price": "33258",
-            "match_price": "33275",
-            "ask1_price": "33266",
-            "match_time": "10:57:16",
-            "OnOrderBook_datetime": "-",
-            "OnTrade_datetime": "2026-04-07 10:58:05.379783",
-            "is_test_match": false
-        }
-    },
-    "mega": {}
-}
-    '''
-
-    try:
-        current_datetime = datetime.now()
-
-        for vendor_name, vendor_data in _json_content.items():
-            if not isinstance(vendor_data, dict):
-                continue
-            for symbol, symbol_data in vendor_data.items():
-                if not isinstance(symbol_data, dict):
-                    continue
-                on_trade_datetime_str = symbol_data.get('OnTrade_datetime', '')
-                if not on_trade_datetime_str:
-                    return {'result': False, 'msg': f'{vendor_name}.{symbol} OnTrade_datetime is missing or empty'}
-                if not isinstance(on_trade_datetime_str, str):
-                    return {'result': False, 'msg': f'{vendor_name}.{symbol} OnTrade_datetime is not a string'}
-                try:
-                    on_trade_datetime = datetime.strptime(on_trade_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
-                except Exception as e:
-                    return {'result': False, 'msg': f'{vendor_name}.{symbol} OnTrade_datetime parse error: {str(e)}'}
-                time_diff = abs((current_datetime - on_trade_datetime).total_seconds())
-                if time_diff > CRON_DATETIME_THRESHOLD_SEC:
-                    return {'result': False, 'msg': f'{vendor_name}.{symbol} OnTrade_datetime > {CRON_DATETIME_THRESHOLD_SEC} sec: {time_diff}'}
-
-        return {'result': True, 'msg': ''}
-
-    except Exception as e:
-        return {'result': False, 'msg': f'Exception: {str(e)}'}
 
 if __name__ == "__main__":
 
@@ -327,7 +330,7 @@ if __name__ == "__main__":
                     msg = ''
                     
                 # add another check
-                # /get_strategy_quote
+                # /get_strategy_id_quote NEAR
                 if final_result:
 
                     response1 = requests.get(check_url1, headers=headers, verify=False, timeout=3)
@@ -335,21 +338,21 @@ if __name__ == "__main__":
 
                     if is_trading_time: # is trading time
 
-                        response = requests.get(check_url2, headers=headers, verify=False, timeout=3)
+                        response = requests.post(check_url2, headers=headers, json={"strategy_id": "NEAR"}, verify=False, timeout=3)
                         # json_content
                         json_content = response.json()
                         result = check_json2(json_content)
                         # print(result)
                         if not result['result']:
                             final_result = False
-                            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + result['msg']
+                            msg = result['msg']
                         else:
                             # Success with this token
                             final_result = True
                             msg = ''
 
                 # add another check
-                # /get_strategy_quote
+                # /get_strategy_id_quote FARR
                 if final_result:
 
                     response1 = requests.get(check_url1, headers=headers, verify=False, timeout=3)
@@ -357,14 +360,14 @@ if __name__ == "__main__":
 
                     if is_trading_time: # is trading time
 
-                        response = requests.post(check_url3, headers=headers, json={"choice": "dashboard_futures"}, verify=False, timeout=3)
+                        response = requests.post(check_url2, headers=headers, json={"strategy_id": "FARR"}, verify=False, timeout=3)
                         # json_content
                         json_content = response.json()
-                        result = check_json3(json_content)
+                        result = check_json2(json_content)
                         # print(result)
                         if not result['result']:
                             final_result = False
-                            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' ' + result['msg']
+                            msg = result['msg']
                         else:
                             # Success with this token
                             final_result = True
