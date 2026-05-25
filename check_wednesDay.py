@@ -378,6 +378,28 @@ if __name__ == "__main__":
                             final_result = True
                             msg = ''
 
+                # add another check
+                # /get_strategy_id_quote FTXO
+                if final_result:
+
+                    response1 = requests.get(check_url1, headers=headers, verify=False, timeout=3)
+                    is_trading_time = response1.json().get('is_trading_time', True) # default to True if key is missing
+
+                    if is_trading_time: # is trading time
+
+                        response = requests.post(check_url2, headers=headers, json={"strategy_id": "FTXO"}, verify=False, timeout=3)
+                        # json_content
+                        json_content = response.json()
+                        result = check_json2(json_content)
+                        # print(result)
+                        if not result['result']:
+                            final_result = False
+                            msg = result['msg']
+                        else:
+                            # Success with this token
+                            final_result = True
+                            msg = ''
+
             except Exception as e:
                 #print('b')
                 final_result = False
