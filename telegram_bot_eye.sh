@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="$HOME/.local/bin:$PATH"  # cron has a minimal PATH; uv lives here
 ff_pid=$(ps -ef | grep "telegram_bot_eye.py" | grep -v 'grep' | awk '{print $2}')
 if [ ! -z "$ff_pid" ]; then
     kill -9 $ff_pid
