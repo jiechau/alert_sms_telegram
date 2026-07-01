@@ -24,7 +24,6 @@ from alert_common import (
 )
 
 CONFIG_FILE = "config_requests.yml"
-STRATEGIES = ("NEAR", "FARR", "FTXO")
 MARKET_OPEN = dtime(9, 0, 10)
 MARKET_CLOSE = dtime(13, 29, 50)
 DATETIME_FMT = "%Y-%m-%d %H:%M:%S.%f"
@@ -38,6 +37,7 @@ class Config:
     try_cnt: int
     try_sleep: float
     auth_tokens: list
+    monitored_strategies: list
     cron_threshold_sec: float
     orderbook_threshold_sec: float
     check_mem: bool
@@ -52,6 +52,7 @@ class Config:
             try_cnt=w.get("try_cnt", 3),
             try_sleep=w.get("try_sleep", 5),
             auth_tokens=w.get("auth_tokens") or [],
+            monitored_strategies=w.get("monitored_strategies") or [],
             cron_threshold_sec=w.get("CRON_DATETIME_THRESHOLD_SEC", 30),
             orderbook_threshold_sec=w.get("OnOrderBook_datetime_THRESHOLD_SEC", 30),
             check_mem=w.get("if_check_MEM", True),
@@ -158,7 +159,7 @@ def check_strategies(headers: dict, cfg: Config) -> CheckResult:
     )
     if not is_trading:
         return CheckResult(True)
-    for strategy in STRATEGIES:
+    for strategy in cfg.monitored_strategies:
         data = requests.post(
             cfg.quote_url,
             headers=headers,
