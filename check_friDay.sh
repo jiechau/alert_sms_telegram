@@ -1,17 +1,5 @@
 #!/bin/bash
-
-#cd $HOME/venv
-#source py311/bin/activate
-#cd $HOME/life_codes/alert_sms_telegram
-#while true; do
-#  python check_friDay.py
-#  sleep 60
-#done
-
-
 cd $HOME/life_codes/alert_sms_telegram
-source .venv/bin/activate
-python check_friDay.py >> logs/check_friDay.txt 2>&1
-deactivate
+uv run python check_friDay.py >> logs/check_friDay.txt 2>&1
 current_time=$(date +"done %Y-%m-%d %H:%M:%S")
 echo $current_time >> logs/check_friDay.txt

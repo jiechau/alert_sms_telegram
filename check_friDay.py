@@ -1,141 +1,75 @@
-import yaml
-from concurrent.futures import ThreadPoolExecutor
+"""friDay peering health check.
+
+Polls a plain-text status endpoint and alerts via Telegram when any monitored
+host reports a failure reason appended after its name.
+
+Each status line looks like:  ``2026-07-01 15:33:50 k8s06``
+A failing host carries a trailing reason:  ``2026-07-01 15:37:32 gpu168 connection``
+
+The response may also contain a trailing free-text section (a dashed separator
+followed by failure details); those non-status lines are ignored.
+"""
+from __future__ import annotations
+
+from datetime import datetime
+
 import requests
-from datetime import datetime, timedelta
-import re 
-import requests.packages.urllib3
-requests.packages.urllib3.disable_warnings()
-import time
-import subprocess
 
-# config
-def get_myconfig(_myconfig_file):
-    with open(_myconfig_file, 'r', encoding="utf-8") as stream:
-        _myconfig = yaml.load(stream, Loader=yaml.CLoader)
-    return _myconfig
-#myconfig = get_myconfig("config.yml")
-myconfig = get_myconfig("config_requests.yml")
-check_url = myconfig['Check_friday']['check_url']
-try_cnt = myconfig['Check_friday']['try_cnt'] # 3
-try_sleep = myconfig['Check_friday']['try_sleep'] # sec, use 60
-sms_cmd = myconfig['SMS']['sms_cmd']
+from alert_common import (
+    CheckResult,
+    load_config,
+    run_with_retries,
+    send_telegram_alert,
+)
 
-final_msg = ''
+CONFIG_FILE = "config_requests.yml"
 
-#
-'''
-2025-01-22 14:31:00 39_fastapi_peering_local
-2025-01-23 10:53:52 39_fastapi_peering_468office 22
-2025-01-23 10:54:03 39_fastapi_peering_468idc
-2025-01-23 10:54:39 39_fastapi_peering_AZtaiwan 31 32
-2025-01-22 13:07:13 39_fastapi_peering_AZtokyo
-2025-01-23 10:54:44 39_fastapi_peering_outside
-'''
-def check_line(line):
 
-    global final_msg
+def check_line(line: str, monitored_hosts: set[str]) -> CheckResult:
+    parts = line.split(" ", 2)
+    if len(parts) < 3:
+        return CheckResult(True)  # not a status line -> ignore
 
     try:
-        # Split line into timestamp and message
-        parts = line.split(' ', 2)
-        if len(parts) < 3:
-            final_msg = f"{line}"
-            return False
-            
-        # Check if it's one of the monitored services
-        monitored_services = [
-          #  '39_fastapi_peering_local',
-            '39_fastapi_peering_468office',
-            '39_fastapi_peering_468idc',
-            '39_fastapi_peering_AZtaiwan',
-          #  '39_fastapi_peering_AZtokyo',
-            '39_fastapi_peering_outside'
-        ]
-        
-        service = parts[2].split()[0]  # Get service name without numbers
-        if service not in monitored_services:
-            return True  # Skip validation for non-monitored services
-            
-        # Check if there are numbers after service name
-        if len(parts[2].split()) > 1:
-            final_msg = f"{line}"
-            return False
-            
-        # Check timestamp
-        timestamp = datetime.strptime(f"{parts[0]} {parts[1]}", '%Y-%m-%d %H:%M:%S')
-        time_diff = datetime.now() - timestamp
-        if time_diff > timedelta(minutes=5):
-            #print('aaa')
-            final_msg = f"{line}"
-            return False
-            
-        return True # Everything is OK
-        
-    except Exception:
-        return False
+        datetime.strptime(f"{parts[0]} {parts[1]}", "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return CheckResult(True)  # not a status line -> ignore
+
+    host, *reason = parts[2].split()
+    if host not in monitored_hosts:
+        return CheckResult(True)  # not monitored -> ignore
+    if reason:
+        return CheckResult(False, line)  # failure reason appended
+    return CheckResult(True)
+
+
+def check_endpoint(url: str, monitored_hosts: set[str]) -> CheckResult:
+    lines = requests.get(url, verify=False, timeout=2).text.splitlines()
+    if not lines:
+        return CheckResult(False, "no data received from endpoint")
+    for line in lines:
+        result = check_line(line, monitored_hosts)
+        if not result.ok:
+            return result
+    return CheckResult(True)
+
+
+def main() -> None:
+    cfg = load_config(CONFIG_FILE)
+    section = cfg["Check_friday"]
+    sms_cmd = cfg["SMS"]["sms_cmd"]
+    monitored_hosts = set(section.get("monitored_hosts") or [])
+
+    result = run_with_retries(
+        lambda: check_endpoint(section["check_url"], monitored_hosts),
+        try_cnt=section["try_cnt"],
+        try_sleep=section["try_sleep"],
+    )
+
+    if not result.ok:
+        print(result.msg)
+        send_telegram_alert(sms_cmd, f"friDay {result.msg}")
 
 
 if __name__ == "__main__":
-
-    #%% start
-    #print(check_url)
-    #print(try_cnt)
-    #print(try_sleep)
-
-    i_cnt = 0
-    final_result = False
-    while (final_result is False) and (i_cnt < try_cnt):
-        #print(i_cnt)
-        i_cnt = i_cnt + 1
-        final_result = True
-        try:
-            #print('a')
-            response = requests.get(check_url, verify=False, timeout=2)
-            msg = response.text
-            #print(msg) # null
-            lt_text = msg.splitlines()
-            #print(lt_text) # []
-            
-            # Check if we got any data to validate
-            if not lt_text:
-                #print("No data received from API")
-                final_result = False
-            else:
-                with ThreadPoolExecutor() as executor:
-                    results = executor.map(check_line, lt_text)
-                    #print(type(result))
-                    #print(result)
-                    for result in results:
-                        #print(type(result))
-                        #print(result)
-                        if not result:
-                            #print("Check failed")
-                            #print(response.text)
-                            final_result = False
-                            #exit(False)
-
-        except Exception as e:
-            #print('b')
-            final_result = False
-            msg = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ' exception: ' + str(e)
-        if not final_result:
-            time.sleep(try_sleep)
-
-    # final result
-    if not final_result:
-        print(msg)
-        curl_cmd = sms_cmd + ' -d text="friDay ' + final_msg + '"'
-        rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
-
-    ## for test
-    ## curl_cmd = '/usr/bin/curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=1111111 -d text="' + str(0) + ' ' + lt_text[0] + '"'
-    #curl_cmd = sms_cmd + ' -d text="' + str(0) + ' ' + lt_text[0] + '"'
-    #rr = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
-
-    ## for test
-    #import os
-    #exit_status = os.system(curl_cmd)
-    #time.sleep(10)
-
-
-
+    main()

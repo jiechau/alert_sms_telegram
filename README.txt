@@ -45,67 +45,88 @@ many channels
 
 ## 2. a python requests example
 
-# Configuration File (config.yml):
-Begin by copying config_requests.yml.example to config.yml
+The checks share the same shape: poll an endpoint, and if it looks stale/unhealthy,
+retry a few times before firing a Telegram alert. check_friDay.py and
+check_wednesDay.py are thin scripts; the shared retry / alert / config helpers
+live in alert_common.py. We'll use check_wednesDay.py as the example.
 
-# Do the necessary modification. In the check section, set the following parameters:
+# Configuration File (config_requests.yml):
+Begin by copying config_requests.yml.example to config_requests.yml
 
-Check:
-  getget_url: 'https://aaa.bbb.com/api'
+# Do the necessary modification. In the Check_wednesday section, set the parameters:
+
+Check_wednesday:
+  check_url:  'https://options/info'              # service + per-vendor status
+  check_url1: 'https://options/is_trading_time'   # gate the quote checks
+  check_url2: 'https://options/get_strategy_quote' # per-strategy quotes (POST)
+  CRON_DATETIME_THRESHOLD_SEC: 30                  # max cron_datetime age (sec)
+  OnOrderBook_datetime_THRESHOLD_SEC: 30           # max OnOrderBook age (sec)
+  if_check_MEM: True                               # also check trade mem_avail
+  MEM_AVAIL_THRESHOLD_PERCENT: 10.0                # min free memory (percent)
   try_cnt: 3
-  try_sleep: 30 # 30 seconds
+  try_sleep: 5 # seconds between retries
+  auth_tokens:
+    - 'Basic XXXXX='   # tried in order until one succeeds
 
-The getget_url should return the following format (in text/html):
+check_url returns JSON. check_wednesDay.py flags a failure when:
+  - status / any vendor cron_datetime is older than CRON_DATETIME_THRESHOLD_SEC
+  - a trade vendor's mem_avail drops below MEM_AVAIL_THRESHOLD_PERCENT
+  - during market hours, a stock / future OnOrderBook_datetime is too old
+    (only when /is_trading_time reports is_trading_time = true)
 
-Successful responses:
-2025-01-22 14:31:00 39_fastapi_peering_local
-2025-01-27 11:43:17 39_fastapi_peering_AZtaiwan
-2025-01-27 11:43:28 39_fastapi_peering_outside
-... some more lines
+Healthy /info looks like:
+{
+  "status": {"cron_datetime": "2025-12-09 23:21:37.452"},
+  "my_status": {
+    "trade": {"mega":   {"cron_datetime": "2025-12-09 23:21:32.608", "mem_avail": "58.65%"}},
+    "quote": {"yuanta": {"cron_datetime": "2025-12-09 23:21:37.042"}}
+  }
+}
 
-Unsuccessful responses (accompanied by error codes):
-2025-01-22 14:31:00 39_fastapi_peering_local 13 20
-2025-01-27 11:43:17 39_fastapi_peering_AZtaiwan 13
-2025-01-27 11:43:28 39_fastapi_peering_outside 13
-... some more lines
+An unhealthy response is one where a cron_datetime lags, or a POST to
+check_url2 returns a strategy whose OnOrderBook_datetime is stale.
 
 # In the SMS section, set the following parameters:
 
 SMS:
   sms_cmd: 'curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ '
 
-Instead of SMS, we've transitioned to using Telegram for its cost-effectiveness. Inside check_friDay.py, the shell command is as follows:
-$ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text="alert!text!"
+Instead of SMS, we've transitioned to using Telegram for its cost-effectiveness.
+The alert text is appended to sms_cmd as a separate argument (no shell quoting),
+so the effective command is:
+$ curl -k -s -o /dev/null -X POST https://api.telegram.org/botXXX:YYY/sendMessage -d chat_id=ZZZ -d text='wednesDay <failure message>'
 
-# set up environment
-$ cd $HOME/venv
-$ /filepath/python3.11 -m venv --system-site-packages py311
-$ source py311/bin/activate
-$ pip install --upgrade pip
+# set up environment (uv)
+Install uv once (https://docs.astral.sh/uv/): curl -LsSf https://astral.sh/uv/install.sh | sh
 $ cd $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
-$ pip install -r requirements_requests_py311.txt
+$ uv sync   # creates .venv and installs deps from pyproject.toml
+
+# run it
+$ uv run python check_wednesDay.py
+The check_wednesDay.sh / check_friDay.sh wrappers already call `uv run`, so no
+manual activate/deactivate is needed.
 
 # Cron Job, example of cron command is in crontab.txt:
-*/5 * * * * $HOME/life_codes/alert_sms_telegram/check_friDay.sh >> /tmp/jie_aa.txt 2>&1 
+*/1 * * * * $HOME/life_codes/alert_sms_telegram/check_wednesDay.sh >> /tmp/log_check_wednesDay.txt 2>&1
 
 
 ## 3. a python-telegram-bot example
 
 
-# set up environment
+# set up environment (uv)
+python-telegram-bot is already declared in pyproject.toml, so the same uv
+environment used by the check_* scripts covers the bot too.
 
-$ cd $HOME/venv
-$ /filepath/python3.7 -m venv --system-site-packages py37t
-$ source py37t/bin/activate
-$ pip install --upgrade pip
-$ pip install -r requirements_telegrambot_py37
+$ cd $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
+$ uv sync   # creates .venv and installs deps from pyproject.toml
 
 # run the 'long polling' mode for telegram bot (there is also webhooks)
 
-$ cd $HOME/venv
-$ source py37t/bin/activate
-$ $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
-$ python telegram_bot_example.py
+$ cd $HOME/life_codes/alert_sms_telegram # filepath_of_this_project
+$ uv run python telegram_bot_example.py
+
+The telegram_bot_eye.sh wrapper also uses `uv run`, so it needs no manual
+activate/deactivate.
 
 # misc memo
 
