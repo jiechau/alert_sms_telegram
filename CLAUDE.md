@@ -75,5 +75,6 @@ a config key, update both the active file and its `.example`. Adjusting check be
 
 ## Git
 
-`origin` is a **multi-mirror remote** — pushes fan out to GitLab, GitHub, and Bitbucket
-in a single `git push`.
+`origin` is **GitLab only** (`https://gitlab.com/jiechau/alert_sms_telegram.git`) — a
+single push URL. Sibling projects such as `f_options` use a multi-mirror `origin` that
+fans out to GitLab, GitHub, and Bitbucket; this repo does not.
