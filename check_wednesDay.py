@@ -202,7 +202,7 @@ def run_once(cfg: Config) -> CheckResult:
 def main() -> None:
     raw = load_config(CONFIG_FILE)
     cfg = Config.from_section(raw["Check_wednesday"])
-    sms_cmd = raw["SMS"]["sms_cmd"]
+    sms_cmd = raw["Check_wednesday"]["sms_cmd"]
 
     result = run_with_retries(
         lambda: run_once(cfg),

@@ -57,7 +57,7 @@ def check_endpoint(url: str, monitored_hosts: set[str]) -> CheckResult:
 def main() -> None:
     cfg = load_config(CONFIG_FILE)
     section = cfg["Check_friday"]
-    sms_cmd = cfg["SMS"]["sms_cmd"]
+    sms_cmd = section["sms_cmd"]
     monitored_hosts = set(section.get("monitored_hosts") or [])
 
     result = run_with_retries(
