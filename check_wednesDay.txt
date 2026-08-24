@@ -1,0 +1,88 @@
+check_wednesDay
+===============
+
+What it checks
+--------------
+The f_options service (live: https://optionss.jiechau.me). Two kinds of check,
+first failure wins.
+
+1. GET check_url (/info) - freshness + memory
+   - status.cron_datetime older than CRON_DATETIME_THRESHOLD_SEC (30s) -> fail
+   - each my_status.trade.<vendor> / my_status.quote.<vendor>
+     cron_datetime older than that same threshold                     -> fail
+   - trade vendors only, when if_check_MEM is true:
+     mem_avail below MEM_AVAIL_THRESHOLD_PERCENT (10%)                -> fail
+
+   Live, my_status holds the same two vendors under both sections:
+
+     quote.yuanta  quote.mega  trade.yuanta  trade.mega
+
+   All four carry cron_datetime and mem_avail, but mem_avail is only checked
+   for the two trade entries (the quote ones are skipped by design).
+
+2. POST check_url2 (/get_strategy_id_quote) per strategy - quote freshness
+   - gated by GET check_url1 (/is_trading_time); if false, skipped entirely
+   - for each strategy in monitored_strategies, any futures entry (and, only
+     between 09:00:10 and 13:29:50, any stocks entry) whose
+     OnOrderBook_datetime is older than OnOrderBook_datetime_THRESHOLD_SEC
+                                                                      -> fail
+
+   *** This check is currently a no-op. ***
+   The live service no longer returns any OnOrderBook_datetime field anywhere
+   in the response -- quote entries carry OnOrder_datetime / OnTrade_datetime /
+   vendor_state_timestamp instead. A missing field is treated as OK, so this
+   check can never fail as written. It last fired on 2026-07-01 ("NEAR MXFG6
+   OnOrderBook_datetime too old" in logs/check_wednesDay.txt); the field went
+   away sometime between then and now. It needs a code change (pick the field
+   that replaced it) before it monitors anything again.
+
+   Also note the response has a third section, `options` (19-23 entries per
+   strategy), which the check never looks at -- only stocks and futures.
+
+   Why NEAR and FTXO: they cover both vendors between them, so those two
+   strategies are enough to catch either vendor going stale --
+
+     NEAR -> mega        FTXO -> yuanta        FARR -> yuanta
+
+   FARR is left out (commented in config_requests.yml) because it would only
+   re-test yuanta, which FTXO already covers.
+
+Each entry in auth_tokens is tried in order until one token passes every check.
+
+How it runs
+-----------
+cron (*/1 min) -> check_wednesDay.sh -> cd repo, `uv run python check_wednesDay.py`
+
+Currently deployed on the 166 ubuntu box (192.168.123.166, hostname ds1525u):
+
+    # check_wednesDay.sh
+    */1 * * * * $HOME/life_codes/alert_sms_telegram/check_wednesDay.sh >> $HOME/_life_logs/alert_sms_telegram/check_wednesDay/log_check_wednesDay.txt 2>&1
+
+The real output lands in logs/check_wednesDay.txt inside the repo, because the
+.sh wrapper does its own redirect. The $HOME/_life_logs/... file named in the
+cron line only catches whatever the wrapper leaves on stdout, so it stays
+0 bytes.
+
+Retry / alert
+-------------
+Retries try_cnt times (3), try_sleep seconds apart (5); network/JSON errors
+count as a failed attempt. Only if every attempt fails does it send one Telegram
+alert to the JiechauBotChannel channel:
+
+    wednesDay <failure message>
+
+Success is silent.
+
+Config keys (config_requests.yml, section Check_wednesday)
+----------------------------------------------------------
+    check_url                            /info
+    check_url1                           /is_trading_time
+    check_url2                           /get_strategy_id_quote (POST)
+    CRON_DATETIME_THRESHOLD_SEC          max cron_datetime age, seconds
+    OnOrderBook_datetime_THRESHOLD_SEC   max OnOrderBook age, seconds
+    if_check_MEM                         also check trade mem_avail
+    MEM_AVAIL_THRESHOLD_PERCENT          min free memory, percent
+    monitored_strategies                 strategy ids to quote-check
+    auth_tokens                          tried in order until one succeeds
+    try_cnt/try_sleep                    retry count and delay
+    sms_cmd                              curl command used to post the alert

@@ -1,0 +1,56 @@
+check_friDay
+============
+
+What it checks
+--------------
+Host liveness on a plain-text status page (Check_friday.check_url, live:
+https://ailog.shopping.friday.tw/getget).
+
+The endpoint returns one line per host:
+
+    2026-08-24 09:26:50 bigdata              <- healthy
+    2026-07-01 15:37:32 gpu168 connection    <- unhealthy (reason appended)
+
+A host is UNHEALTHY when any text is appended after its name. Nothing else is
+inspected -- note the timestamp itself is NOT checked for staleness, so a host
+that stopped reporting days ago still passes as long as no reason is appended
+(jieOci1 is currently like this).
+
+Only hosts listed in config_requests.yml -> Check_friday.monitored_hosts are
+checked. Live that list is:
+
+    bigdata  k8s06  azml03  k8sdev  gpu168  jieHome
+
+Other hosts in the response (currently jieMac, jieOci1) and non-timestamp lines
+(the trailing free-text failure section) are ignored. An empty response is a
+failure.
+
+How it runs
+-----------
+cron (*/5 min) -> check_friDay.sh -> cd repo, `uv run python check_friDay.py`
+
+Currently deployed on the 166 ubuntu box (192.168.123.166, hostname ds1525u):
+
+    # check_friDay
+    */5 * * * * $HOME/life_codes/alert_sms_telegram/check_friDay.sh >> $HOME/_life_logs/alert_sms_telegram/check_friDay/log_check_friDay.txt 2>&1
+
+The real output lands in logs/check_friDay.txt inside the repo, because the .sh
+wrapper does its own redirect. The $HOME/_life_logs/... file named in the cron
+line only catches whatever the wrapper leaves on stdout, so it stays 0 bytes.
+
+Retry / alert
+-------------
+Retries try_cnt times (3), try_sleep seconds apart (30); network/JSON errors
+count as a failed attempt. Only if every attempt fails does it send one Telegram
+alert to the JieInfoBotChannel channel:
+
+    friDay <the offending status line>
+
+Success is silent.
+
+Config keys (config_requests.yml, section Check_friday)
+------------------------------------------------------
+    check_url         status page URL
+    monitored_hosts   list of hostnames to watch
+    try_cnt/try_sleep retry count and delay
+    sms_cmd           curl command used to post the Telegram alert

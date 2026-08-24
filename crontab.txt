@@ -1,5 +1,7 @@
+# current cron on the 166 ubuntu box
+
 # check_friDay
-*/5 * * * * $HOME/life_codes/alert_sms_telegram/check_friDay.sh >> /tmp/log_check_friDay.txt 2>&1 
+*/5 * * * * $HOME/life_codes/alert_sms_telegram/check_friDay.sh >> $HOME/_life_logs/alert_sms_telegram/check_friDay/log_check_friDay.txt 2>&1
 
 # check_wednesDay.sh
-*/1 * * * * $HOME/life_codes/alert_sms_telegram/check_wednesDay.sh >> /tmp/log_check_wednesDay.txt 2>&1 
+*/1 * * * * $HOME/life_codes/alert_sms_telegram/check_wednesDay.sh >> $HOME/_life_logs/alert_sms_telegram/check_wednesDay/log_check_wednesDay.txt 2>&1
